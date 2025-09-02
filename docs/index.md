@@ -26,7 +26,7 @@ release-notes.md
 :name: Common Tasks
 :hidden:
 
-user-guides/configuration-guide
+user-guides/configuration-guide/index
 user-guides/guardrails-library
 user-guides/guardrails-process
 user-guides/colang-language-syntax-guide
@@ -37,6 +37,7 @@ user-guides/cli
 user-guides/server-guide
 user-guides/langchain/index
 user-guides/detailed-logging/index
+user-guides/tracing/index
 user-guides/jailbreak-detection-heuristics/index
 user-guides/llm/index
 user-guides/multi-config-api/index
@@ -63,6 +64,7 @@ user-guides/advanced/vertexai-setup
 user-guides/advanced/nemoguard-contentsafety-deployment
 user-guides/advanced/nemoguard-topiccontrol-deployment
 user-guides/advanced/nemoguard-jailbreakdetect-deployment
+user-guides/advanced/kv-cache-reuse
 user-guides/advanced/safeguarding-ai-virtual-assistant-blueprint
 ```
 
@@ -72,7 +74,6 @@ user-guides/advanced/safeguarding-ai-virtual-assistant-blueprint
 :hidden:
 
 security/guidelines
-security/red-teaming
 ```
 
 ```{toctree}

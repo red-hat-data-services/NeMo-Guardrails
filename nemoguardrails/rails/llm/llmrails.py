@@ -28,6 +28,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional, Tuple, Type, Union,
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
+from typing_extensions import Self
 
 from nemoguardrails.actions.llm.generation import LLMGenerationActions
 from nemoguardrails.actions.llm.utils import (
@@ -37,7 +38,7 @@ from nemoguardrails.actions.llm.utils import (
 from nemoguardrails.actions.output_mapping import is_output_blocked
 from nemoguardrails.actions.v2_x.generation import LLMGenerationActionsV2dotx
 from nemoguardrails.colang import parse_colang_file
-from nemoguardrails.colang.v1_0.runtime.flows import compute_context
+from nemoguardrails.colang.v1_0.runtime.flows import _normalize_flow_id, compute_context
 from nemoguardrails.colang.v1_0.runtime.runtime import Runtime, RuntimeV1_0
 from nemoguardrails.colang.v2_x.runtime.flows import Action, State
 from nemoguardrails.colang.v2_x.runtime.runtime import RuntimeV2_x
@@ -72,7 +73,10 @@ from nemoguardrails.rails.llm.options import (
     GenerationOptions,
     GenerationResponse,
 )
-from nemoguardrails.rails.llm.utils import get_history_cache_key
+from nemoguardrails.rails.llm.utils import (
+    get_action_details_from_flow_id,
+    get_history_cache_key,
+)
 from nemoguardrails.streaming import END_OF_STREAM, StreamingHandler
 from nemoguardrails.utils import (
     extract_error_json,
@@ -240,6 +244,8 @@ class LLMRails:
             from nemoguardrails.tracing import create_log_adapters
 
             self._log_adapters = create_log_adapters(config.tracing)
+        else:
+            self._log_adapters = None
 
         # We run some additional checks on the config
         self._validate_config()
@@ -278,6 +284,8 @@ class LLMRails:
         # We also register the kb as a parameter that can be passed to actions.
         self.runtime.register_action_param("kb", self.kb)
 
+        # detect actions that need isolated LLM instances and create them
+        self._create_isolated_llms_for_actions()
         # Reference to the general ExplainInfo object.
         self.explain_info = None
 
@@ -301,20 +309,14 @@ class LLMRails:
 
         for flow_name in self.config.rails.input.flows:
             # content safety check input/output flows are special as they have parameters
-            if flow_name.startswith("content safety check") or flow_name.startswith(
-                "topic safety check"
-            ):
-                continue
+            flow_name = _normalize_flow_id(flow_name)
             if flow_name not in existing_flows_names:
                 raise ValueError(
                     f"The provided input rail flow `{flow_name}` does not exist"
                 )
 
         for flow_name in self.config.rails.output.flows:
-            if flow_name.startswith("content safety check") or flow_name.startswith(
-                "topic safety check"
-            ):
-                continue
+            flow_name = _normalize_flow_id(flow_name)
             if flow_name not in existing_flows_names:
                 raise ValueError(
                     f"The provided output rail flow `{flow_name}` does not exist"
@@ -506,6 +508,147 @@ class LLMRails:
                 raise
 
         self.runtime.register_action_param("llms", llms)
+
+    def _create_isolated_llms_for_actions(self):
+        """Create isolated LLM copies for all actions that accept 'llm' parameter."""
+        if not self.llm:
+            log.debug("No main LLM available for creating isolated copies")
+            return
+
+        try:
+            actions_needing_llms = self._detect_llm_requiring_actions()
+            log.info(
+                "%d actions requiring isolated LLMs: %s",
+                len(actions_needing_llms),
+                list(actions_needing_llms),
+            )
+
+            created_count = 0
+
+            configured_actions_names = []
+            try:
+                if self.config.flows:
+                    get_action_details = partial(
+                        get_action_details_from_flow_id, flows=self.config.flows
+                    )
+                    for flow_id in self.config.rails.input.flows:
+                        action_name, _ = get_action_details(flow_id)
+                        configured_actions_names.append(action_name)
+                    for flow_id in self.config.rails.output.flows:
+                        action_name, _ = get_action_details(flow_id)
+                        configured_actions_names.append(action_name)
+                else:
+                    # for configurations without flow definitions, use all actions that need LLMs
+                    log.info(
+                        "No flow definitions found, creating isolated LLMs for all actions requiring them"
+                    )
+                    configured_actions_names = list(actions_needing_llms)
+            except Exception as e:
+                # if flow matching fails, fall back to all actions that need LLMs
+                log.info(
+                    "Flow matching failed (%s), creating isolated LLMs for all actions requiring them",
+                    e,
+                )
+                configured_actions_names = list(actions_needing_llms)
+
+            for action_name in configured_actions_names:
+                if action_name not in actions_needing_llms:
+                    continue
+                if f"{action_name}_llm" not in self.runtime.registered_action_params:
+                    isolated_llm = self._create_action_llm_copy(self.llm, action_name)
+                    if isolated_llm:
+                        self.runtime.register_action_param(
+                            f"{action_name}_llm", isolated_llm
+                        )
+                        created_count += 1
+                        log.debug("Created isolated LLM for action: %s", action_name)
+                else:
+                    log.debug(
+                        "Action %s already has dedicated LLM, skipping isolation",
+                        action_name,
+                    )
+
+            log.info("Created %d isolated LLM instances for actions", created_count)
+
+        except Exception as e:
+            log.warning("Failed to create isolated LLMs for actions: %s", e)
+
+    def _detect_llm_requiring_actions(self):
+        """Auto-detect actions that have 'llm' parameter."""
+        import inspect
+
+        actions_needing_llms = set()
+
+        if (
+            not hasattr(self.runtime, "action_dispatcher")
+            or not self.runtime.action_dispatcher
+        ):
+            log.debug("Action dispatcher not available")
+            return actions_needing_llms
+
+        for (
+            action_name,
+            action_info,
+        ) in self.runtime.action_dispatcher.registered_actions.items():
+            action_func = self._get_action_function(action_info)
+            if not action_func:
+                continue
+
+            try:
+                sig = inspect.signature(action_func)
+                if "llm" in sig.parameters:
+                    actions_needing_llms.add(action_name)
+                    log.debug("Action %s has 'llm' parameter", action_name)
+
+            except Exception as e:
+                log.debug("Could not inspect action %s: %s", action_name, e)
+
+        return actions_needing_llms
+
+    def _get_action_function(self, action_info):
+        """Extract the actual function from action info."""
+        return action_info if callable(action_info) else None
+
+    def _create_action_llm_copy(
+        self, main_llm: Union[BaseLLM, BaseChatModel], action_name: str
+    ) -> Optional[Union[BaseLLM, BaseChatModel]]:
+        """Create an isolated copy of main LLM for a specific action."""
+        import copy
+
+        try:
+            # shallow copy to preserve HTTP clients, credentials, etc.
+            # but create new instance to avoid shared state
+            isolated_llm = copy.copy(main_llm)
+
+            # isolate model_kwargs to prevent shared mutable state
+            if (
+                hasattr(isolated_llm, "model_kwargs")
+                and isolated_llm.model_kwargs is not None
+            ):
+                isolated_llm.model_kwargs = isolated_llm.model_kwargs.copy()
+
+            log.debug(
+                "Successfully created isolated LLM copy for action: %s", action_name
+            )
+            return isolated_llm
+
+        except Exception as e:
+            error_msg = (
+                "Failed to create isolated LLM instance for action '%s'. "
+                "This is required to prevent parameter contamination between different actions. "
+                "\n\nPossible solutions:"
+                "\n1. If using a custom LLM class, ensure it supports copy.copy() operation"
+                "\n2. Check that your LLM configuration doesn't contain non-copyable objects"
+                "\n3. Consider using a dedicated LLM configuration for action '%s'"
+                "\n\nOriginal error: %s"
+                "\n\nTo use a dedicated LLM for this action, add to your config:"
+                "\nmodels:"
+                "\n  - type: %s"
+                "\n    engine: <your_engine>"
+                "\n    model: <your_model>"
+            ) % (action_name, action_name, e, action_name)
+            log.error(error_msg)
+            raise RuntimeError(error_msg)
 
     def _get_embeddings_search_provider_instance(
         self, esp_config: Optional[EmbeddingSearchProvider] = None
@@ -917,6 +1060,7 @@ class LLMRails:
             await streaming_handler.push_chunk(END_OF_STREAM)
 
         # IF tracing is enabled we need to set GenerationLog attrs
+        original_log_options = None
         if self.config.tracing.enabled:
             if options is None:
                 options = GenerationOptions()
@@ -927,6 +1071,7 @@ class LLMRails:
                 else:
                     # If options is a dict, convert it to GenerationOptions
                     options = GenerationOptions(**options)
+            original_log_options = options.log.model_copy(deep=True)
 
             # enable log options
             # it is aggressive, but these are required for tracing
@@ -1038,11 +1183,40 @@ class LLMRails:
                 # lazy import to avoid circular dependency
                 from nemoguardrails.tracing import Tracer
 
-                # Create a Tracer instance with instantiated adapters
+                span_format = getattr(
+                    self.config.tracing, "span_format", "opentelemetry"
+                )
+                enable_content_capture = getattr(
+                    self.config.tracing, "enable_content_capture", False
+                )
+                # Create a Tracer instance with instantiated adapters and span configuration
                 tracer = Tracer(
-                    input=messages, response=res, adapters=self._log_adapters
+                    input=messages,
+                    response=res,
+                    adapters=self._log_adapters,
+                    span_format=span_format,
+                    enable_content_capture=enable_content_capture,
                 )
                 await tracer.export_async()
+
+                # respect original log specification, if tracing added information to the output
+                if original_log_options:
+                    if not any(
+                        (
+                            original_log_options.internal_events,
+                            original_log_options.activated_rails,
+                            original_log_options.llm_calls,
+                            original_log_options.colang_history,
+                        )
+                    ):
+                        res.log = None
+                    else:
+                        if not original_log_options.internal_events:
+                            res.log.internal_events = []
+                        if not original_log_options.activated_rails:
+                            res.log.activated_rails = []
+                        if not original_log_options.llm_calls:
+                            res.log.llm_calls = []
 
             return res
         else:
@@ -1275,33 +1449,38 @@ class LLMRails:
             self.process_events_async(events, state, blocking)
         )
 
-    def register_action(self, action: callable, name: Optional[str] = None):
+    def register_action(self, action: callable, name: Optional[str] = None) -> Self:
         """Register a custom action for the rails configuration."""
         self.runtime.register_action(action, name)
+        return self
 
-    def register_action_param(self, name: str, value: Any):
+    def register_action_param(self, name: str, value: Any) -> Self:
         """Registers a custom action parameter."""
         self.runtime.register_action_param(name, value)
+        return self
 
-    def register_filter(self, filter_fn: callable, name: Optional[str] = None):
+    def register_filter(self, filter_fn: callable, name: Optional[str] = None) -> Self:
         """Register a custom filter for the rails configuration."""
         self.runtime.llm_task_manager.register_filter(filter_fn, name)
+        return self
 
-    def register_output_parser(self, output_parser: callable, name: str):
+    def register_output_parser(self, output_parser: callable, name: str) -> Self:
         """Register a custom output parser for the rails configuration."""
         self.runtime.llm_task_manager.register_output_parser(output_parser, name)
+        return self
 
-    def register_prompt_context(self, name: str, value_or_fn: Any):
+    def register_prompt_context(self, name: str, value_or_fn: Any) -> Self:
         """Register a value to be included in the prompt context.
 
         :name: The name of the variable or function that will be used.
         :value_or_fn: The value or function that will be used to generate the value.
         """
         self.runtime.llm_task_manager.register_prompt_context(name, value_or_fn)
+        return self
 
     def register_embedding_search_provider(
         self, name: str, cls: Type[EmbeddingsIndex]
-    ) -> None:
+    ) -> Self:
         """Register a new embedding search provider.
 
         Args:
@@ -1310,10 +1489,11 @@ class LLMRails:
         """
 
         self.embedding_search_providers[name] = cls
+        return self
 
     def register_embedding_provider(
         self, cls: Type[EmbeddingModel], name: Optional[str] = None
-    ) -> None:
+    ) -> Self:
         """Register a custom embedding provider.
 
         Args:
@@ -1325,6 +1505,7 @@ class LLMRails:
             ValueError: If the model does not have 'encode' or 'encode_async' methods.
         """
         register_embedding_provider(engine_name=name, model=cls)
+        return self
 
     def explain(self) -> ExplainInfo:
         """Helper function to return the latest ExplainInfo object."""
@@ -1450,7 +1631,7 @@ class LLMRails:
         output_rails_flows_id = self.config.rails.output.flows
         stream_first = stream_first or output_rails_streaming_config.stream_first
         get_action_details = partial(
-            _get_action_details_from_flow_id, flows=self.config.flows
+            get_action_details_from_flow_id, flows=self.config.flows
         )
 
         parallel_mode = getattr(self.config.rails.output, "parallel", False)
@@ -1519,20 +1700,31 @@ class LLMRails:
                         # continue processing the chunk even if rails fail
                         pass
                     else:
-                        # if there are any stop events, content was blocked
+                        # if there are any stop events, content was blocked or internal error occurred
                         if result.events:
-                            # extract the blocked flow from the first stop event
-                            blocked_flow = result.events[0].get(
-                                "flow_id", "output rails"
-                            )
+                            # extract the flow info from the first stop event
+                            stop_event = result.events[0]
+                            blocked_flow = stop_event.get("flow_id", "output rails")
+                            error_type = stop_event.get("error_type")
 
-                            reason = f"Blocked by {blocked_flow} rails."
+                            if error_type == "internal_error":
+                                error_message = stop_event.get(
+                                    "error_message", "Unknown error"
+                                )
+                                reason = f"Internal error in {blocked_flow} rail: {error_message}"
+                                error_code = "rail_execution_failure"
+                                error_type = "internal_error"
+                            else:
+                                reason = f"Blocked by {blocked_flow} rails."
+                                error_code = "content_blocked"
+                                error_type = "guardrails_violation"
+
                             error_data = {
                                 "error": {
                                     "message": reason,
-                                    "type": "guardrails_violation",
+                                    "type": error_type,
                                     "param": blocked_flow,
-                                    "code": "content_blocked",
+                                    "code": error_code,
                                 }
                             }
                             yield json.dumps(error_data)
@@ -1595,58 +1787,3 @@ class LLMRails:
                 # yield the individual chunks directly from the buffer strategy
                 for chunk in user_output_chunks:
                     yield chunk
-
-
-def _get_action_details_from_flow_id(
-    flow_id: str,
-    flows: List[Union[Dict, Any]],
-    prefixes: Optional[List[str]] = None,
-) -> Tuple[str, Any]:
-    """Get the action name and parameters from the flow id.
-
-    First, try to find an exact match.
-    If not found, then if the provided flow_id starts with one of the special prefixes,
-    return the first flow whose id starts with that same prefix.
-    """
-
-    supported_prefixes = [
-        "content safety check output",
-        "topic safety check output",
-    ]
-    if prefixes:
-        supported_prefixes.extend(prefixes)
-
-    candidate_flow = None
-
-    for flow in flows:
-        # If exact match, use it
-        if flow["id"] == flow_id:
-            candidate_flow = flow
-            break
-
-        # If no exact match, check if both the provided flow_id and this flow's id share a special prefix
-        for prefix in supported_prefixes:
-            if flow_id.startswith(prefix) and flow["id"].startswith(prefix):
-                candidate_flow = flow
-                # We don't break immediately here because an exact match would have been preferred,
-                # but since we're in the else branch it's fine to choose the first matching candidate.
-                # TODO:we should avoid having multiple matchin prefixes
-                break
-
-        if candidate_flow is not None:
-            break
-
-    if candidate_flow is None:
-        raise ValueError(f"No action found for flow_id: {flow_id}")
-
-    # we have identified a candidate, look for the run_action element.
-    for element in candidate_flow["elements"]:
-        if (
-            element["_type"] == "run_action"
-            and element["_source_mapping"]["filename"].endswith(".co")
-            and "execute" in element["_source_mapping"]["line_text"]
-            and "action_name" in element
-        ):
-            return element["action_name"], element["action_params"]
-
-    raise ValueError(f"No run_action element found for flow_id: {flow_id}")

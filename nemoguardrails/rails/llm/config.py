@@ -358,11 +358,28 @@ class LogAdapterConfig(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class SpanFormat(str, Enum):
+    legacy = "legacy"
+    opentelemetry = "opentelemetry"
+
+
 class TracingConfig(BaseModel):
     enabled: bool = False
     adapters: List[LogAdapterConfig] = Field(
         default_factory=lambda: [LogAdapterConfig()],
         description="The list of tracing adapters to use. If not specified, the default adapters are used.",
+    )
+    span_format: str = Field(
+        default=SpanFormat.opentelemetry,
+        description="The span format to use. Options are 'legacy' (simple metrics) or 'opentelemetry' (OpenTelemetry semantic conventions).",
+    )
+    enable_content_capture: bool = Field(
+        default=False,
+        description=(
+            "Capture prompts and responses (user/assistant/tool message content) in tracing/telemetry events. "
+            "Disabled by default for privacy and alignment with OpenTelemetry GenAI semantic conventions. "
+            "WARNING: Enabling this may include PII and sensitive data in your telemetry backend."
+        ),
     )
 
 
@@ -424,6 +441,11 @@ class CoreConfig(BaseModel):
 
 class InputRails(BaseModel):
     """Configuration of input rails."""
+
+    parallel: Optional[bool] = Field(
+        default=False,
+        description="If True, the input rails are executed in parallel.",
+    )
 
     flows: List[str] = Field(
         default_factory=list,
@@ -752,6 +774,62 @@ class ClavataRailConfig(BaseModel):
     )
 
 
+class PangeaRailOptions(BaseModel):
+    """Configuration data for the Pangea AI Guard API"""
+
+    recipe: str = Field(
+        description="""Recipe key of a configuration of data types and settings defined in the Pangea User Console. It
+        specifies the rules that are to be applied to the text, such as defang malicious URLs."""
+    )
+
+
+class PangeaRailConfig(BaseModel):
+    """Configuration data for the Pangea AI Guard API"""
+
+    input: Optional[PangeaRailOptions] = Field(
+        default=None,
+        description="Pangea configuration for an Input Guardrail",
+    )
+    output: Optional[PangeaRailOptions] = Field(
+        default=None,
+        description="Pangea configuration for an Output Guardrail",
+    )
+
+
+class GuardrailsAIValidatorConfig(BaseModel):
+    """Configuration for a single Guardrails AI validator."""
+
+    name: str = Field(
+        description="Unique identifier or import path for the Guardrails AI validator (e.g., 'toxic_language', 'pii', 'regex_match', or 'guardrails/competitor_check')."
+    )
+
+    parameters: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Parameters to pass to the validator during initialization (e.g., threshold, regex pattern).",
+    )
+
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Metadata to pass to the validator during validation (e.g., valid_topics, context).",
+    )
+
+
+class GuardrailsAIRailConfig(BaseModel):
+    """Configuration data for Guardrails AI integration."""
+
+    validators: List[GuardrailsAIValidatorConfig] = Field(
+        default_factory=list,
+        description="List of Guardrails AI validators to apply. Each validator can have its own parameters and metadata.",
+    )
+
+    def get_validator_config(self, name: str) -> Optional[GuardrailsAIValidatorConfig]:
+        """Get a specific validator configuration by name."""
+        for _validator in self.validators:
+            if _validator.name == name:
+                return _validator
+        return None
+
+
 class RailsConfigData(BaseModel):
     """Configuration data for specific rails that are supported out-of-the-box."""
 
@@ -798,6 +876,16 @@ class RailsConfigData(BaseModel):
     clavata: Optional[ClavataRailConfig] = Field(
         default_factory=ClavataRailConfig,
         description="Configuration for Clavata.",
+    )
+
+    pangea: Optional[PangeaRailConfig] = Field(
+        default_factory=PangeaRailConfig,
+        description="Configuration for Pangea.",
+    )
+
+    guardrails_ai: Optional[GuardrailsAIRailConfig] = Field(
+        default_factory=GuardrailsAIRailConfig,
+        description="Configuration for Guardrails AI validators.",
     )
 
 
@@ -1345,12 +1433,13 @@ class RailsConfig(BaseModel):
     @root_validator(pre=True, allow_reuse=True)
     def check_prompt_exist_for_self_check_rails(cls, values):
         rails = values.get("rails", {})
+        prompts = values.get("prompts", []) or []
 
         enabled_input_rails = rails.get("input", {}).get("flows", [])
         enabled_output_rails = rails.get("output", {}).get("flows", [])
         provided_task_prompts = [
             prompt.task if hasattr(prompt, "task") else prompt.get("task")
-            for prompt in values.get("prompts", [])
+            for prompt in prompts
         ]
 
         # Input moderation prompt verification
@@ -1405,7 +1494,7 @@ class RailsConfig(BaseModel):
             # "content_safety_check input $model",
             # "content_safety_check output $model",
         ]
-        prompts = values.get("prompts", [])
+        prompts = values.get("prompts") or []
         for prompt in prompts:
             task = prompt.task if hasattr(prompt, "task") else prompt.get("task")
             output_parser = (
@@ -1473,7 +1562,7 @@ class RailsConfig(BaseModel):
         """
         # If the config path is a file, we load the YAML content.
         # Otherwise, if it's a folder, we iterate through all files.
-        if config_path.endswith(".yaml") or config_path.endswith(".yml"):
+        if os.path.isfile(config_path) and config_path.endswith((".yaml", ".yml")):
             with open(config_path) as f:
                 raw_config = yaml.safe_load(f.read())
 
@@ -1652,12 +1741,12 @@ def _join_rails_configs(
     combined_rails_config_dict = _join_dict(
         base_rails_config.dict(), updated_rails_config.dict()
     )
-    combined_rails_config_dict["config_path"] = ",".join(
-        [
-            base_rails_config.dict()["config_path"],
-            updated_rails_config.dict()["config_path"],
-        ]
-    )
+    # filter out empty strings to avoid leading/trailing commas
+    config_paths = [
+        base_rails_config.dict()["config_path"] or "",
+        updated_rails_config.dict()["config_path"] or "",
+    ]
+    combined_rails_config_dict["config_path"] = ",".join(filter(None, config_paths))
     combined_rails_config = RailsConfig(**combined_rails_config_dict)
     return combined_rails_config
 

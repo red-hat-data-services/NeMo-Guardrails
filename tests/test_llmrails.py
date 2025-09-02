@@ -21,7 +21,7 @@ import pytest
 
 from nemoguardrails import LLMRails, RailsConfig
 from nemoguardrails.rails.llm.config import Model
-from nemoguardrails.rails.llm.llmrails import _get_action_details_from_flow_id
+from nemoguardrails.rails.llm.llmrails import get_action_details_from_flow_id
 from tests.utils import FakeLLM, clean_events, event_sequence_conforms
 
 
@@ -627,124 +627,6 @@ async def test_2(rails_config):
     }
 
 
-# get_action_details_from_flow_id used in llmrails.py
-
-
-@pytest.fixture
-def dummy_flows() -> List[Union[Dict, Any]]:
-    return [
-        {
-            "id": "test_flow",
-            "elements": [
-                {
-                    "_type": "run_action",
-                    "_source_mapping": {
-                        "filename": "flows.v1.co",
-                        "line_text": "execute something",
-                    },
-                    "action_name": "test_action",
-                    "action_params": {"param1": "value1"},
-                }
-            ],
-        },
-        # Additional flow that should match on a prefix
-        {
-            "id": "other_flow is prefix",
-            "elements": [
-                {
-                    "_type": "run_action",
-                    "_source_mapping": {
-                        "filename": "flows.v1.co",
-                        "line_text": "execute something else",
-                    },
-                    "action_name": "other_action",
-                    "action_params": {"param2": "value2"},
-                }
-            ],
-        },
-        {
-            "id": "test_rails_co",
-            "elements": [
-                {
-                    "_type": "run_action",
-                    "_source_mapping": {
-                        "filename": "rails.co",
-                        "line_text": "execute something",
-                    },
-                    "action_name": "test_action_supported",
-                    "action_params": {"param1": "value1"},
-                }
-            ],
-        },
-        {
-            "id": "test_rails_co_v2",
-            "elements": [
-                {
-                    "_type": "run_action",
-                    "_source_mapping": {
-                        "filename": "rails.co",
-                        "line_text": "await something",  # in colang 2 we use await
-                    },
-                    "action_name": "test_action_not_supported",
-                    "action_params": {"param1": "value1"},
-                }
-            ],
-        },
-    ]
-
-
-def test_get_action_details_exact_match(dummy_flows):
-    action_name, action_params = _get_action_details_from_flow_id(
-        "test_flow", dummy_flows
-    )
-    assert action_name == "test_action"
-    assert action_params == {"param1": "value1"}
-
-
-def test_get_action_details_exact_match_any_co_file(dummy_flows):
-    action_name, action_params = _get_action_details_from_flow_id(
-        "test_rails_co", dummy_flows
-    )
-    assert action_name == "test_action_supported"
-    assert action_params == {"param1": "value1"}
-
-
-def test_get_action_details_exact_match_not_colang_2(dummy_flows):
-    with pytest.raises(ValueError) as exc_info:
-        _get_action_details_from_flow_id("test_rails_co_v2", dummy_flows)
-
-    assert "No run_action element found for flow_id" in str(exc_info.value)
-
-
-def test_get_action_details_prefix_match(dummy_flows):
-    # For a flow_id that starts with the prefix "other_flow",
-    # we expect to retrieve the action details from the flow whose id starts with that prefix.
-    # we expect a result since we are passing the prefixes argument.
-    action_name, action_params = _get_action_details_from_flow_id(
-        "other_flow", dummy_flows, prefixes=["other_flow"]
-    )
-    assert action_name == "other_action"
-    assert action_params == {"param2": "value2"}
-
-
-def test_get_action_details_prefix_match_unsupported_prefix(dummy_flows):
-    # For a flow_id that starts with the prefix "other_flow",
-    # we expect to retrieve the action details from the flow whose id starts with that prefix.
-    # but as the prefix is not supported, we expect a ValueError.
-
-    with pytest.raises(ValueError) as exc_info:
-        _get_action_details_from_flow_id("other_flow", dummy_flows)
-
-    assert "No action found for flow_id" in str(exc_info.value)
-
-
-def test_get_action_details_no_match(dummy_flows):
-    # Tests that a non matching flow_id raises a ValueError
-    with pytest.raises(ValueError) as exc_info:
-        _get_action_details_from_flow_id("non_existing_flow", dummy_flows)
-    assert "No action found for flow_id" in str(exc_info.value)
-
-
 @pytest.fixture
 def llm_config_with_main():
     """Fixture providing a basic config with a main LLM."""
@@ -851,6 +733,42 @@ async def test_other_models_honored(mock_init, llm_config_with_multiple_models):
     injected_llm = FakeLLM(responses=["express greeting"])
     llm_rails = LLMRails(config=llm_config_with_multiple_models, llm=injected_llm)
     assert hasattr(llm_rails, "content_safety_llm")
+    events = [{"type": "UtteranceUserActionFinished", "final_transcript": "Hello!"}]
+    new_events = await llm_rails.runtime.generate_events(events)
+    assert any(event.get("intent") == "express greeting" for event in new_events)
+
+
+@pytest.mark.asyncio
+async def test_llm_constructor_with_empty_models_config():
+    """Test that LLMRails can be initialized with constructor LLM when config has empty models list.
+
+    This tests the fix for the IndexError that occurred when providing an LLM via constructor
+    but having an empty models list in the config.
+    """
+    config = RailsConfig.parse_object(
+        {
+            "models": [],
+            "user_messages": {
+                "express greeting": ["Hello!"],
+            },
+            "flows": [
+                {
+                    "elements": [
+                        {"user": "express greeting"},
+                        {"bot": "express greeting"},
+                    ]
+                },
+            ],
+            "bot_messages": {
+                "express greeting": ["Hello! How are you?"],
+            },
+        }
+    )
+
+    injected_llm = FakeLLM(responses=["express greeting"])
+    llm_rails = LLMRails(config=config, llm=injected_llm)
+    assert llm_rails.llm == injected_llm
+
     events = [{"type": "UtteranceUserActionFinished", "final_transcript": "Hello!"}]
     new_events = await llm_rails.runtime.generate_events(events)
     assert any(event.get("intent") == "express greeting" for event in new_events)
@@ -1155,3 +1073,100 @@ async def test_stream_usage_enabled_for_all_providers_when_streaming(
 
     # stream_usage should be set for all providers when streaming is enabled
     assert kwargs.get("stream_usage") is True
+
+
+# Add this test after the existing tests, around line 1100+
+
+
+def test_register_methods_return_self():
+    """Test that all register_* methods return self for method chaining."""
+    config = RailsConfig.from_content(config={"models": []})
+    rails = LLMRails(config=config, llm=FakeLLM(responses=[]))
+
+    # Test register_action returns self
+    def dummy_action():
+        pass
+
+    result = rails.register_action(dummy_action, "test_action")
+    assert result is rails, "register_action should return self"
+
+    # Test register_action_param returns self
+    result = rails.register_action_param("test_param", "test_value")
+    assert result is rails, "register_action_param should return self"
+
+    # Test register_filter returns self
+    def dummy_filter(text):
+        return text
+
+    result = rails.register_filter(dummy_filter, "test_filter")
+    assert result is rails, "register_filter should return self"
+
+    # Test register_output_parser returns self
+    def dummy_parser(text):
+        return text
+
+    result = rails.register_output_parser(dummy_parser, "test_parser")
+    assert result is rails, "register_output_parser should return self"
+
+    # Test register_prompt_context returns self
+    result = rails.register_prompt_context("test_context", "test_value")
+    assert result is rails, "register_prompt_context should return self"
+
+    # Test register_embedding_search_provider returns self
+    from nemoguardrails.embeddings.index import EmbeddingsIndex
+
+    class DummyEmbeddingProvider(EmbeddingsIndex):
+        def __init__(self, **kwargs):
+            pass
+
+        def build(self):
+            pass
+
+        def search(self, text, max_results=5):
+            return []
+
+    result = rails.register_embedding_search_provider(
+        "dummy_provider", DummyEmbeddingProvider
+    )
+    assert result is rails, "register_embedding_search_provider should return self"
+
+    # Test register_embedding_provider returns self
+    from nemoguardrails.embeddings.providers.base import EmbeddingModel
+
+    class DummyEmbeddingModel(EmbeddingModel):
+        def encode(self, texts):
+            return []
+
+    result = rails.register_embedding_provider(DummyEmbeddingModel, "dummy_embedding")
+    assert result is rails, "register_embedding_provider should return self"
+
+
+def test_method_chaining():
+    """Test that method chaining works correctly with register_* methods."""
+    config = RailsConfig.from_content(config={"models": []})
+    rails = LLMRails(config=config, llm=FakeLLM(responses=[]))
+
+    def dummy_action():
+        return "action_result"
+
+    def dummy_filter(text):
+        return text.upper()
+
+    def dummy_parser(text):
+        return {"parsed": text}
+
+    # Test chaining multiple register methods
+    result = (
+        rails.register_action(dummy_action, "chained_action")
+        .register_action_param("chained_param", "param_value")
+        .register_filter(dummy_filter, "chained_filter")
+        .register_output_parser(dummy_parser, "chained_parser")
+        .register_prompt_context("chained_context", "context_value")
+    )
+
+    assert result is rails, "Method chaining should return the same rails instance"
+
+    # Verify that all registrations actually worked
+    assert "chained_action" in rails.runtime.action_dispatcher.registered_actions
+    assert "chained_param" in rails.runtime.registered_action_params
+    assert rails.runtime.registered_action_params["chained_param"] == "param_value"
