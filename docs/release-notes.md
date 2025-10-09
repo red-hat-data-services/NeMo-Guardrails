@@ -12,6 +12,26 @@ The following sections summarize and highlight the changes for each release.
 For a complete record of changes in a release, refer to the
 [CHANGELOG.md](https://github.com/NVIDIA/NeMo-Guardrails/blob/develop/CHANGELOG.md) in the GitHub repository.
 
+(v0-17-0)=
+
+## 0.17.0
+
+(v0-17-0-features)=
+
+### Key Features
+
+- Added support for [integrating with LangGraph and tool calling](./user-guides/langchain/langgraph-integration.md).
+- Enhanced support for [integrating with LangChain `RunnableRails`](./user-guides/langchain/runnable-rails.md).
+  This release supports synchronous and asynchronous operations, streaming, and batch processing.
+
+(v0-17-0-other-changes)=
+
+### Other Changes
+
+- Improved URL handling for connecting to NemoGuard JailbreakDetect NIM.
+  Guardrails now tolerates the URL for `rails.config.jailbreak_detection.nim_base_url` ending with or without a trailing slash.
+  Refer to [](./user-guides/advanced/nemoguard-jailbreakdetect-deployment.md) for information about using the NIM.
+
 (v0-16-0)=
 
 ## 0.16.0
