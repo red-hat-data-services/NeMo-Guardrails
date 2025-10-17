@@ -70,6 +70,7 @@ from nemoguardrails.embeddings.index import EmbeddingsIndex
 from nemoguardrails.embeddings.providers import register_embedding_provider
 from nemoguardrails.embeddings.providers.base import EmbeddingModel
 from nemoguardrails.kb.kb import KnowledgeBase
+from nemoguardrails.llm.cache import CacheInterface, LFUCache
 from nemoguardrails.llm.models.initializer import (
     ModelInitializationError,
     init_llm_model,
@@ -500,6 +501,7 @@ class LLMRails:
                     kwargs=kwargs,
                 )
 
+                # Configure the model based on its type
                 if llm_config.type == "main":
                     # If a main LLM was already injected, skip creating another
                     # one. Otherwise, create and register it.
@@ -524,6 +526,60 @@ class LLMRails:
                 raise
 
         self.runtime.register_action_param("llms", llms)
+
+        self._initialize_model_caches()
+
+    def _create_model_cache(self, model) -> LFUCache:
+        """
+        Create cache instance for a model based on its configuration.
+
+        Args:
+            model: The model configuration object
+
+        Returns:
+            LFUCache: The cache instance
+        """
+
+        if model.cache.maxsize <= 0:
+            raise ValueError(
+                f"Invalid cache maxsize for model '{model.type}': {model.cache.maxsize}. "
+                "Capacity must be greater than 0. Skipping cache creation."
+            )
+
+        stats_logging_interval = None
+        if model.cache.stats.enabled and model.cache.stats.log_interval is not None:
+            stats_logging_interval = model.cache.stats.log_interval
+
+        cache = LFUCache(
+            maxsize=model.cache.maxsize,
+            track_stats=model.cache.stats.enabled,
+            stats_logging_interval=stats_logging_interval,
+        )
+
+        log.info(
+            f"Created cache for model '{model.type}' with maxsize {model.cache.maxsize}"
+        )
+
+        return cache
+
+    def _initialize_model_caches(self) -> None:
+        """Initialize caches for configured models."""
+        model_caches: Optional[Dict[str, CacheInterface]] = dict()
+        for model in self.config.models:
+            if model.type in ["main", "embeddings"]:
+                continue
+
+            if model.cache and model.cache.enabled:
+                cache = self._create_model_cache(model)
+                model_caches[model.type] = cache
+
+                log.info(
+                    f"Initialized model '{model.type}' with cache %s",
+                    "enabled" if cache else "disabled",
+                )
+
+        if model_caches:
+            self.runtime.register_action_param("model_caches", model_caches)
 
     def _get_embeddings_search_provider_instance(
         self, esp_config: Optional[EmbeddingSearchProvider] = None

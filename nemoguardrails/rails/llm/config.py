@@ -69,6 +69,35 @@ colang_path_dirs.append(standard_library_path)
 colang_path_dirs.append(guardrails_stdlib_path)
 
 
+class CacheStatsConfig(BaseModel):
+    """Configuration for cache statistics tracking and logging."""
+
+    enabled: bool = Field(
+        default=False,
+        description="Whether cache statistics tracking is enabled",
+    )
+    log_interval: Optional[float] = Field(
+        default=None,
+        description="Seconds between periodic cache stats logging to logs (None disables logging)",
+    )
+
+
+class ModelCacheConfig(BaseModel):
+    """Configuration for model caching."""
+
+    enabled: bool = Field(
+        default=False,
+        description="Whether caching is enabled (default: False - no caching)",
+    )
+    maxsize: int = Field(
+        default=50000, description="Maximum number of entries in the cache per model"
+    )
+    stats: CacheStatsConfig = Field(
+        default_factory=CacheStatsConfig,
+        description="Configuration for cache statistics tracking and logging",
+    )
+
+
 class Model(BaseModel):
     """Configuration of a model used by the rails engine.
 
@@ -95,6 +124,12 @@ class Model(BaseModel):
     mode: Literal["chat", "text"] = Field(
         default="chat",
         description="Whether the mode is 'text' completion or 'chat' completion. Allowed values are 'chat' or 'text'.",
+    )
+
+    # Cache configuration specific to this model (for content safety models)
+    cache: Optional["ModelCacheConfig"] = Field(
+        default=None,
+        description="Cache configuration for this specific model (primarily used for content safety models)",
     )
 
     @model_validator(mode="before")

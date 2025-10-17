@@ -21,6 +21,13 @@ from langchain_core.language_models.llms import BaseLLM
 from nemoguardrails.actions.actions import action
 from nemoguardrails.actions.llm.utils import llm_call
 from nemoguardrails.context import llm_call_info_var
+from nemoguardrails.llm.cache import CacheInterface
+from nemoguardrails.llm.cache.utils import (
+    CacheEntry,
+    create_normalized_cache_key,
+    extract_llm_stats_for_cache,
+    get_from_cache_and_restore_stats,
+)
 from nemoguardrails.llm.taskmanager import LLMTaskManager
 from nemoguardrails.logging.explain import LLMCallInfo
 
@@ -33,6 +40,7 @@ async def content_safety_check_input(
     llm_task_manager: LLMTaskManager,
     model_name: Optional[str] = None,
     context: Optional[dict] = None,
+    model_caches: Optional[Dict[str, CacheInterface]] = None,
     **kwargs,
 ) -> dict:
     _MAX_TOKENS = 3
@@ -75,6 +83,15 @@ async def content_safety_check_input(
 
     max_tokens = max_tokens or _MAX_TOKENS
 
+    cache = model_caches.get(model_name) if model_caches else None
+
+    if cache:
+        cache_key = create_normalized_cache_key(check_input_prompt)
+        cached_result = get_from_cache_and_restore_stats(cache, cache_key)
+        if cached_result is not None:
+            log.debug(f"Content safety cache hit for model '{model_name}'")
+            return cached_result
+
     result = await llm_call(
         llm,
         check_input_prompt,
@@ -86,7 +103,18 @@ async def content_safety_check_input(
 
     is_safe, *violated_policies = result
 
-    return {"allowed": is_safe, "policy_violations": violated_policies}
+    final_result = {"allowed": is_safe, "policy_violations": violated_policies}
+
+    if cache:
+        cache_key = create_normalized_cache_key(check_input_prompt)
+        cache_entry: CacheEntry = {
+            "result": final_result,
+            "llm_stats": extract_llm_stats_for_cache(),
+        }
+        cache.put(cache_key, cache_entry)
+        log.debug(f"Content safety result cached for model '{model_name}'")
+
+    return final_result
 
 
 def content_safety_check_output_mapping(result: dict) -> bool:
