@@ -24,6 +24,7 @@ from nemoguardrails import LLMRails, RailsConfig
 from nemoguardrails.logging.explain import ExplainInfo
 from nemoguardrails.rails.llm.config import Model
 from nemoguardrails.rails.llm.llmrails import get_action_details_from_flow_id
+from tests.conftest import REASONING_TRACE_MOCK_PATH
 from tests.utils import FakeLLM, clean_events, event_sequence_conforms
 
 
@@ -1372,3 +1373,107 @@ def test_cache_initialization_with_multiple_models(mock_init_llm_model):
     assert "jailbreak_detection" in model_caches
     assert model_caches["content_safety"].maxsize == 1000
     assert model_caches["jailbreak_detection"].maxsize == 2000
+
+
+@pytest.mark.asyncio
+async def test_generate_async_reasoning_content_field_passthrough():
+    from nemoguardrails.rails.llm.options import GenerationOptions
+
+    test_reasoning_trace = "Let me think about this step by step..."
+
+    with patch(REASONING_TRACE_MOCK_PATH) as mock_get_reasoning:
+        mock_get_reasoning.return_value = test_reasoning_trace
+
+        config = RailsConfig.from_content(config={"models": []})
+        llm = FakeLLM(responses=["The answer is 42"])
+        llm_rails = LLMRails(config=config, llm=llm)
+
+        result = await llm_rails.generate_async(
+            messages=[{"role": "user", "content": "What is the answer?"}],
+            options=GenerationOptions(),
+        )
+
+        assert result.reasoning_content == test_reasoning_trace
+        assert isinstance(result.response, list)
+        assert result.response[0]["content"] == "The answer is 42"
+
+
+@pytest.mark.asyncio
+async def test_generate_async_reasoning_content_none():
+    from nemoguardrails.rails.llm.options import GenerationOptions
+
+    with patch(REASONING_TRACE_MOCK_PATH) as mock_get_reasoning:
+        mock_get_reasoning.return_value = None
+
+        config = RailsConfig.from_content(config={"models": []})
+        llm = FakeLLM(responses=["Regular response"])
+        llm_rails = LLMRails(config=config, llm=llm)
+
+        result = await llm_rails.generate_async(
+            messages=[{"role": "user", "content": "Hello"}],
+            options=GenerationOptions(),
+        )
+
+        assert result.reasoning_content is None
+        assert isinstance(result.response, list)
+        assert result.response[0]["content"] == "Regular response"
+
+
+@pytest.mark.asyncio
+async def test_generate_async_reasoning_not_in_response_content():
+    from nemoguardrails.rails.llm.options import GenerationOptions
+
+    test_reasoning_trace = "Let me analyze this carefully..."
+
+    with patch(REASONING_TRACE_MOCK_PATH) as mock_get_reasoning:
+        mock_get_reasoning.return_value = test_reasoning_trace
+
+        config = RailsConfig.from_content(config={"models": []})
+        llm = FakeLLM(responses=["The answer is 42"])
+        llm_rails = LLMRails(config=config, llm=llm)
+
+        result = await llm_rails.generate_async(
+            messages=[{"role": "user", "content": "What is the answer?"}],
+            options=GenerationOptions(),
+        )
+
+        assert result.reasoning_content == test_reasoning_trace
+        assert test_reasoning_trace not in result.response[0]["content"]
+        assert result.response[0]["content"] == "The answer is 42"
+
+
+@pytest.mark.asyncio
+async def test_generate_async_reasoning_with_thinking_tags():
+    test_reasoning_trace = "Step 1: Analyze\nStep 2: Respond"
+
+    with patch(REASONING_TRACE_MOCK_PATH) as mock_get_reasoning:
+        mock_get_reasoning.return_value = test_reasoning_trace
+
+        config = RailsConfig.from_content(config={"models": [], "passthrough": True})
+        llm = FakeLLM(responses=["The answer is 42"])
+        llm_rails = LLMRails(config=config, llm=llm)
+
+        result = await llm_rails.generate_async(
+            messages=[{"role": "user", "content": "What is the answer?"}]
+        )
+
+        expected_prefix = f"<think>{test_reasoning_trace}</think>\n"
+        assert result["content"].startswith(expected_prefix)
+        assert "The answer is 42" in result["content"]
+
+
+@pytest.mark.asyncio
+async def test_generate_async_no_thinking_tags_when_no_reasoning():
+    with patch(REASONING_TRACE_MOCK_PATH) as mock_get_reasoning:
+        mock_get_reasoning.return_value = None
+
+        config = RailsConfig.from_content(config={"models": []})
+        llm = FakeLLM(responses=["Regular response"])
+        llm_rails = LLMRails(config=config, llm=llm)
+
+        result = await llm_rails.generate_async(
+            messages=[{"role": "user", "content": "Hello"}]
+        )
+
+        assert not result["content"].startswith("<think>")
+        assert result["content"] == "Regular response"
