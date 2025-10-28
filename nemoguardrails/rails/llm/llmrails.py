@@ -458,7 +458,7 @@ class LLMRails:
                 (model for model in self.config.models if model.type == "main"), None
             )
 
-            if main_model:
+            if main_model and main_model.model:
                 kwargs = self._prepare_model_kwargs(main_model)
                 self.llm = init_llm_model(
                     model_name=main_model.model,
@@ -490,6 +490,9 @@ class LLMRails:
 
             try:
                 model_name = llm_config.model
+                if not model_name:
+                    raise ValueError("LLM Config model field not set")
+
                 provider_name = llm_config.engine
                 kwargs = self._prepare_model_kwargs(llm_config)
                 mode = llm_config.mode
