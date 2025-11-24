@@ -17,12 +17,18 @@ import logging
 from functools import wraps
 from typing import Any, List, Optional
 
-from langchain_core.callbacks.manager import CallbackManagerForLLMRun
-from langchain_core.language_models.chat_models import generate_from_stream
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
+from langchain_core.language_models.chat_models import (
+    agenerate_from_stream,
+    generate_from_stream,
+)
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_nvidia_ai_endpoints import ChatNVIDIA as ChatNVIDIAOriginal
-from pydantic.v1 import Field
+from pydantic import Field
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +55,28 @@ def stream_decorator(func):
     return wrapper
 
 
+def async_stream_decorator(func):  # pragma: no cover
+    @wraps(func)
+    async def wrapper(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        stream: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        should_stream = stream if stream is not None else self.streaming
+        if should_stream:
+            stream_iter = self._astream(
+                messages, stop=stop, run_manager=run_manager, **kwargs
+            )
+            return await agenerate_from_stream(stream_iter)
+        else:
+            return await func(self, messages, stop, run_manager, **kwargs)
+
+    return wrapper
+
+
 # NOTE: this needs to have the same name as the original class,
 #   otherwise, there's a check inside `langchain-nvidia-ai-endpoints` that will fail.
 class ChatNVIDIA(ChatNVIDIAOriginal):
@@ -65,6 +93,21 @@ class ChatNVIDIA(ChatNVIDIAOriginal):
         **kwargs: Any,
     ) -> ChatResult:
         return super()._generate(
+            messages=messages,
+            stop=stop,
+            run_manager=run_manager,
+            **kwargs,
+        )
+
+    @async_stream_decorator
+    async def _agenerate(
+        self,
+        messages: List[BaseMessage],
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return await super()._agenerate(
             messages=messages, stop=stop, run_manager=run_manager, **kwargs
         )
 
