@@ -18,11 +18,19 @@ from datetime import datetime
 from typing import Optional
 
 import pinecone
-from langchain.chains import RetrievalQA
-from langchain.docstore.document import Document
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Pinecone
-from langchain_core.language_models.llms import BaseLLM
+
+try:
+    from langchain.chains import RetrievalQA
+    from langchain.embeddings.openai import OpenAIEmbeddings
+    from langchain.vectorstores import Pinecone
+except ImportError as e:
+    raise ImportError(
+        "Failed to import required LangChain modules. "
+        "Ensure you have installed the correct version of langchain and its dependencies. "
+        f"Original error: {e}"
+    ) from e
+
+from langchain_core.language_models import BaseLLM
 
 from nemoguardrails import LLMRails
 from nemoguardrails.actions import action
@@ -31,7 +39,6 @@ from nemoguardrails.llm.taskmanager import LLMTaskManager
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-PINECONE_ENVIRONMENT = os.environ.get("PINECONE_ENVIRONMENT")
 index_name = "nemoguardrailsindex"
 
 LOG_FILENAME = datetime.now().strftime("logs/mylogfile_%H_%M_%d_%m_%Y.log")

@@ -15,8 +15,16 @@
 
 import os
 
-from langchain.chains import LLMMathChain
-from langchain.prompts import ChatPromptTemplate
+try:
+    from langchain.chains import LLMMathChain
+except ImportError as e:
+    raise ImportError(
+        "Failed to import required LangChain modules. "
+        "If you're using LangChain >= 1.0.0, ensure langchain-classic is installed. "
+        f"Original error: {e}"
+    ) from e
+
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import Tool
 from langchain_openai.chat_models import ChatOpenAI
 from pydantic import BaseModel, Field
