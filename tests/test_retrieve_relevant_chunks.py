@@ -12,12 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
-import pytest
-from langchain_core.language_models import BaseChatModel
-
-from nemoguardrails import LLMRails, RailsConfig
+from nemoguardrails import RailsConfig
 from nemoguardrails.kb.kb import KnowledgeBase
 from tests.utils import TestChat
 
@@ -51,9 +48,7 @@ flow greeting
 def test_relevant_chunk_inserted_in_prompt():
     mock_kb = MagicMock(spec=KnowledgeBase)
 
-    mock_kb.search_relevant_chunks.return_value = [
-        {"title": "Test Title", "body": "Test Body"}
-    ]
+    mock_kb.search_relevant_chunks.return_value = [{"title": "Test Title", "body": "Test Body"}]
 
     chat = TestChat(
         RAILS_CONFIG,

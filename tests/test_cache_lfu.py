@@ -21,13 +21,11 @@ maxsize management, and edge cases.
 """
 
 import asyncio
-import os
 import threading
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from nemoguardrails.llm.cache.lfu import LFUCache
 
@@ -384,7 +382,6 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_log_stats_now(self):
         """Test immediate stats logging."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(5, track_stats=True, stats_logging_interval=60.0)
 
@@ -394,9 +391,7 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
         cache.get("key1")
         cache.get("nonexistent")
 
-        with patch.object(
-            logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-        ) as mock_log:
+        with patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log:
             cache.log_stats_now()
 
             # Verify log was called
@@ -416,7 +411,6 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_periodic_stats_logging(self):
         """Test automatic periodic stats logging."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(5, track_stats=True, stats_logging_interval=0.5)
 
@@ -424,9 +418,7 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
         cache.put("key1", "value1")
         cache.put("key2", "value2")
 
-        with patch.object(
-            logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-        ) as mock_log:
+        with patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log:
             # Initial operations shouldn't trigger logging
             cache.get("key1")
             self.assertEqual(mock_log.call_count, 0)
@@ -450,7 +442,6 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_stats_logging_with_empty_cache(self):
         """Test stats logging with empty cache."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(5, track_stats=True, stats_logging_interval=0.1)
 
@@ -460,9 +451,7 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
         # Wait for interval to pass
         time.sleep(0.2)
 
-        with patch.object(
-            logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-        ) as mock_log:
+        with patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log:
             # This will trigger stats logging with the previous miss already counted
             cache.get("another_nonexistent")  # Trigger check
 
@@ -477,7 +466,6 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_stats_logging_with_full_cache(self):
         """Test stats logging when cache is at maxsize."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(3, track_stats=True, stats_logging_interval=0.1)
 
@@ -489,9 +477,7 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
         # Cause eviction
         cache.put("key4", "value4")
 
-        with patch.object(
-            logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-        ) as mock_log:
+        with patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log:
             time.sleep(0.2)
             cache.get("key4")  # Trigger check
 
@@ -503,7 +489,6 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_stats_logging_high_hit_rate(self):
         """Test stats logging with high hit rate."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(5, track_stats=True, stats_logging_interval=0.1)
 
@@ -516,9 +501,7 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
         # One miss
         cache.get("nonexistent")
 
-        with patch.object(
-            logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-        ) as mock_log:
+        with patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log:
             cache.log_stats_now()
 
             log_message = mock_log.call_args[0][0]
@@ -529,16 +512,13 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_stats_logging_without_tracking(self):
         """Test that log_stats_now does nothing when tracking is disabled."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(5, track_stats=False)
 
         cache.put("key1", "value1")
         cache.get("key1")
 
-        with patch.object(
-            logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-        ) as mock_log:
+        with patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log:
             cache.log_stats_now()
 
             # Should not log anything
@@ -547,13 +527,13 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_stats_logging_interval_timing(self):
         """Test that stats logging respects the interval timing."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(5, track_stats=True, stats_logging_interval=1.0)
 
-        with patch.object(
-            logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-        ) as mock_log, patch("time.time") as mock_time:
+        with (
+            patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log,
+            patch("time.time") as mock_time,
+        ):
             current_time = [0.0]
 
             def time_side_effect():
@@ -576,7 +556,6 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_stats_logging_with_updates(self):
         """Test stats logging includes update counts."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(5, track_stats=True, stats_logging_interval=0.1)
 
@@ -584,9 +563,7 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
         cache.put("key1", "updated_value1")  # Update
         cache.put("key1", "updated_again")  # Another update
 
-        with patch.object(
-            logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-        ) as mock_log:
+        with patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log:
             cache.log_stats_now()
 
             log_message = mock_log.call_args[0][0]
@@ -596,7 +573,6 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
     def test_stats_log_format_percentages(self):
         """Test that percentages in stats log are formatted correctly."""
         import logging
-        from unittest.mock import patch
 
         cache = LFUCache(5, track_stats=True, stats_logging_interval=0.1)
 
@@ -623,9 +599,7 @@ class TestLFUCacheStatsLogging(unittest.TestCase):
             for i in range(misses):
                 cache.get(f"miss_key_{i}")
 
-            with patch.object(
-                logging.getLogger("nemoguardrails.llm.cache.lfu"), "info"
-            ) as mock_log:
+            with patch.object(logging.getLogger("nemoguardrails.llm.cache.lfu"), "info") as mock_log:
                 cache.log_stats_now()
 
                 if hits > 0 or misses > 0:
@@ -640,9 +614,7 @@ class TestContentSafetyCacheStatsConfig(unittest.TestCase):
         """Test cache configuration with stats disabled."""
         from nemoguardrails.rails.llm.config import CacheStatsConfig, ModelCacheConfig
 
-        cache_config = ModelCacheConfig(
-            enabled=True, maxsize=1000, stats=CacheStatsConfig(enabled=False)
-        )
+        cache_config = ModelCacheConfig(enabled=True, maxsize=1000, stats=CacheStatsConfig(enabled=False))
 
         cache = LFUCache(
             maxsize=cache_config.maxsize,
@@ -775,9 +747,7 @@ class TestLFUCacheThreadSafety(unittest.TestCase):
 
                 # Verify data integrity
                 if retrieved != value:
-                    errors.append(
-                        f"Data corruption for {key}: expected {value}, got {retrieved}"
-                    )
+                    errors.append(f"Data corruption for {key}: expected {value}, got {retrieved}")
 
                 # Access some shared keys
                 shared_key = f"shared_key_{i % 10}"
@@ -820,7 +790,7 @@ class TestLFUCacheThreadSafety(unittest.TestCase):
 
                 # Try to get recently added items
                 if i > 0:
-                    prev_key = f"t{thread_id}_k{i-1}"
+                    prev_key = f"t{thread_id}_k{i - 1}"
                     small_cache.get(prev_key)  # May or may not exist
 
         # Run threads
@@ -924,9 +894,7 @@ class TestLFUCacheThreadSafety(unittest.TestCase):
 
         async def worker(thread_id):
             """Worker that tries to get or compute the same key."""
-            result = await self.cache.get_or_compute(
-                "shared_compute_key", expensive_compute, default="default"
-            )
+            result = await self.cache.get_or_compute("shared_compute_key", expensive_compute, default="default")
             return result
 
         async def run_test():
@@ -974,9 +942,7 @@ class TestLFUCacheThreadSafety(unittest.TestCase):
 
         async def worker():
             """Worker that tries to compute."""
-            result = await self.cache.get_or_compute(
-                "failing_key", failing_compute, default="fallback"
-            )
+            result = await self.cache.get_or_compute("failing_key", failing_compute, default="fallback")
             return result
 
         async def run_test():
@@ -1054,9 +1020,7 @@ class TestLFUCacheThreadSafety(unittest.TestCase):
                 if not large_cache.contains(new_key):
                     # This could happen if cache is full and eviction occurred
                     # Track it separately as it's not a thread safety issue
-                    eviction_warnings.append(
-                        f"Thread {thread_id}: Key {new_key} possibly evicted"
-                    )
+                    eviction_warnings.append(f"Thread {thread_id}: Key {new_key} possibly evicted")
 
                 # Check non-existent keys
                 if large_cache.contains(f"non_existent_{thread_id}_{i}"):
@@ -1120,9 +1084,7 @@ class TestLFUCacheThreadSafety(unittest.TestCase):
         async def worker(thread_id, key_id):
             """Worker that computes values for specific keys."""
             key = f"key_{key_id}"
-            result = await self.cache.get_or_compute(
-                key, lambda: compute_for_key(key), default="error"
-            )
+            result = await self.cache.get_or_compute(key, lambda: compute_for_key(key), default="error")
             return key, result
 
         async def run_test():
@@ -1172,9 +1134,7 @@ class TestLFUCacheThreadSafety(unittest.TestCase):
                 # Value might be None if evicted immediately (unlikely but possible)
                 if retrieved is not None and retrieved != value:
                     # This would indicate actual data corruption
-                    data_integrity_errors.append(
-                        f"Wrong value for {key}: expected {value}, got {retrieved}"
-                    )
+                    data_integrity_errors.append(f"Wrong value for {key}: expected {value}, got {retrieved}")
 
                 # Also work with some high-frequency keys (access multiple times)
                 high_freq_key = f"high_freq_{thread_id % 5}"

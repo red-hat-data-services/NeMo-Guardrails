@@ -15,8 +15,7 @@
 
 import re
 import textwrap
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List
 
 from nemoguardrails.actions.llm.utils import (
     get_colang_history,
@@ -258,11 +257,7 @@ def verbose_v1(colang_history: str) -> str:
     for i, line in enumerate(lines):
         if line.startswith('user "'):
             lines[i] = 'User message: "' + line[6:]
-        elif (
-            line.startswith("  ")
-            and i > 0
-            and lines[i - 1].startswith("User message: ")
-        ):
+        elif line.startswith("  ") and i > 0 and lines[i - 1].startswith("User message: "):
             lines[i] = "User intent: " + line.strip()
         elif line.startswith("user "):
             lines[i] = "User intent: " + line[5:].strip()

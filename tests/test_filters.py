@@ -14,9 +14,6 @@
 # limitations under the License.
 
 import textwrap
-from typing import List, Tuple, Union
-
-import pytest
 
 from nemoguardrails.llm.filters import (
     first_turns,
@@ -152,11 +149,7 @@ class TestUserAssistantSequence:
 
         result = user_assistant_sequence(events)
 
-        assert result == (
-            "User: Hello, how are you?\n"
-            "Assistant: I'm doing well, thank you!\n"
-            "User: Great to hear."
-        )
+        assert result == ("User: Hello, how are you?\nAssistant: I'm doing well, thank you!\nUser: Great to hear.")
 
     def test_user_assistant_sequence_with_multimodal_content(self):
         """Test user_assistant_sequence with multimodal content."""
@@ -175,10 +168,7 @@ class TestUserAssistantSequence:
 
         result = user_assistant_sequence(events)
 
-        assert result == (
-            "User: What's in this image? [+ image]\n"
-            "Assistant: I see a cat in the image."
-        )
+        assert result == ("User: What's in this image? [+ image]\nAssistant: I see a cat in the image.")
 
     def test_user_assistant_sequence_with_empty_events(self):
         """Test user_assistant_sequence with empty events."""
@@ -204,10 +194,7 @@ class TestUserAssistantSequence:
 
         result = user_assistant_sequence(events)
 
-        assert result == (
-            "User: Hello! What's in this image? [+ image]\n"
-            "Assistant: I see a cat in the image."
-        )
+        assert result == ("User: Hello! What's in this image? [+ image]\nAssistant: I see a cat in the image.")
 
     def test_user_assistant_sequence_with_image_only(self):
         """Test user_assistant_sequence with image only."""

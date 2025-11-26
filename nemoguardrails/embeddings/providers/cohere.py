@@ -24,8 +24,7 @@ from .base import EmbeddingModel
 async_client_var: ContextVar = ContextVar("async_client", default=None)
 
 if TYPE_CHECKING:
-    import cohere
-    from cohere import AsyncClient, Client
+    pass
 
 
 class CohereEmbeddingModel(EmbeddingModel):
@@ -59,12 +58,8 @@ class CohereEmbeddingModel(EmbeddingModel):
     ):
         try:
             import cohere
-            from cohere import AsyncClient, Client
         except ImportError:
-            raise ImportError(
-                "Could not import cohere, please install it with "
-                "`pip install cohere`."
-            )
+            raise ImportError("Could not import cohere, please install it with `pip install cohere`.")
 
         self.model = embedding_model
         self.input_type = input_type
@@ -126,7 +121,5 @@ class CohereEmbeddingModel(EmbeddingModel):
         # Make embedding request to Cohere API
         # Since we don't pass embedding_types parameter, the response should be
         # EmbeddingsFloatsEmbedResponse with embeddings as List[List[float]]
-        response = self.client.embed(
-            texts=documents, model=self.model, input_type=self.input_type
-        )
+        response = self.client.embed(texts=documents, model=self.model, input_type=self.input_type)
         return response.embeddings  # type: ignore[return-value]

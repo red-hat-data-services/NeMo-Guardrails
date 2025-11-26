@@ -22,10 +22,10 @@ import pytest
 
 langchain_nvidia_ai_endpoints = pytest.importorskip("langchain_nvidia_ai_endpoints")
 
-from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage  # noqa: E402
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult  # noqa: E402
 
-from nemoguardrails.llm.providers._langchain_nvidia_ai_endpoints_patch import ChatNVIDIA
+from nemoguardrails.llm.providers._langchain_nvidia_ai_endpoints_patch import ChatNVIDIA  # noqa: E402
 
 LIVE_TEST_MODE = os.environ.get("LIVE_TEST_MODE")
 
@@ -72,13 +72,9 @@ class TestAsyncStreamDecorator:
 
         messages = [HumanMessage(content="Hello")]
 
-        with patch(
-            "langchain_nvidia_ai_endpoints.ChatNVIDIA._agenerate"
-        ) as mock_parent_agenerate:
+        with patch("langchain_nvidia_ai_endpoints.ChatNVIDIA._agenerate") as mock_parent_agenerate:
             expected_result = ChatResult(
-                generations=[
-                    ChatGeneration(message=AIMessage(content="Response from parent"))
-                ]
+                generations=[ChatGeneration(message=AIMessage(content="Response from parent"))]
             )
             mock_parent_agenerate.return_value = expected_result
 
@@ -158,12 +154,8 @@ class TestChatNVIDIAPatch:
 
         messages = [[HumanMessage(content="Hello")], [HumanMessage(content="Hi")]]
 
-        with patch(
-            "langchain_nvidia_ai_endpoints.ChatNVIDIA._agenerate"
-        ) as mock_parent:
-            mock_parent.return_value = ChatResult(
-                generations=[ChatGeneration(message=AIMessage(content="Response"))]
-            )
+        with patch("langchain_nvidia_ai_endpoints.ChatNVIDIA._agenerate") as mock_parent:
+            mock_parent.return_value = ChatResult(generations=[ChatGeneration(message=AIMessage(content="Response"))])
 
             result = await chat.agenerate(messages)
 
@@ -207,14 +199,14 @@ class TestChatNVIDIAPatch:
         )
 
         assert hasattr(chat, "streaming")
-        assert chat.streaming == False
+        assert not chat.streaming
 
         chat_with_streaming = ChatNVIDIA(
             model="meta/llama-3.3-70b-instruct",
             base_url="http://localhost:8000/v1",
             streaming=True,
         )
-        assert chat_with_streaming.streaming == True
+        assert chat_with_streaming.streaming
 
     @pytest.mark.asyncio
     async def test_backward_compatibility_sync_generate(self):
@@ -227,9 +219,7 @@ class TestChatNVIDIAPatch:
         messages = [[HumanMessage(content="Hello")]]
 
         with patch("langchain_nvidia_ai_endpoints.ChatNVIDIA._generate") as mock_parent:
-            mock_parent.return_value = ChatResult(
-                generations=[ChatGeneration(message=AIMessage(content="Response"))]
-            )
+            mock_parent.return_value = ChatResult(generations=[ChatGeneration(message=AIMessage(content="Response"))])
 
             result = chat.generate(messages)
 
@@ -278,8 +268,6 @@ class TestChatNVIDIAPatch:
 class TestIntegrationWithLLMRails:
     @pytest.mark.asyncio
     async def test_chatnvidia_with_llmrails_async(self):
-        from unittest.mock import AsyncMock
-
         from nemoguardrails import LLMRails, RailsConfig
 
         config = RailsConfig.from_content(
@@ -294,12 +282,8 @@ class TestIntegrationWithLLMRails:
             }
         )
 
-        async def mock_agenerate_func(
-            self, messages, stop=None, run_manager=None, **kwargs
-        ):
-            return ChatResult(
-                generations=[ChatGeneration(message=AIMessage(content="Test response"))]
-            )
+        async def mock_agenerate_func(self, messages, stop=None, run_manager=None, **kwargs):
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Test response"))])
 
         with patch(
             "langchain_nvidia_ai_endpoints.ChatNVIDIA._agenerate",
@@ -307,9 +291,7 @@ class TestIntegrationWithLLMRails:
         ):
             rails = LLMRails(config)
 
-            result = await rails.generate_async(
-                messages=[{"role": "user", "content": "Hello"}]
-            )
+            result = await rails.generate_async(messages=[{"role": "user", "content": "Hello"}])
 
             assert result is not None
             assert "content" in result
@@ -338,7 +320,7 @@ class TestIntegrationWithLLMRails:
         chat_model = rails.llm
 
         assert hasattr(chat_model, "streaming")
-        assert chat_model.streaming == True
+        assert chat_model.streaming
 
 
 class AsyncIteratorMock:
@@ -365,7 +347,6 @@ class TestChatNVIDIAStreamingE2E:
     @pytest.mark.asyncio
     async def test_stream_async_ttft_with_nim(self):
         from nemoguardrails import LLMRails, RailsConfig
-        from nemoguardrails.actions.llm.utils import LLMCallException
 
         yaml_content = """
 models:
@@ -382,9 +363,7 @@ streaming: True
         chunks = []
 
         async for chunk in rails.stream_async(
-            messages=[
-                {"role": "user", "content": "Count to 20 by 2s, e.g. 2 4 6 8 ..."}
-            ]
+            messages=[{"role": "user", "content": "Count to 20 by 2s, e.g. 2 4 6 8 ..."}]
         ):
             chunks.append(chunk)
             chunk_times.append(time.time())
@@ -393,9 +372,7 @@ streaming: True
         total_time = chunk_times[-1] - chunk_times[0]
 
         assert len(chunks) > 0, "Should receive at least one chunk"
-        assert ttft < (
-            total_time / 2
-        ), f"TTFT ({ttft:.3f}s) should be less than half of total time ({total_time:.3f}s)"
+        assert ttft < (total_time / 2), f"TTFT ({ttft:.3f}s) should be less than half of total time ({total_time:.3f}s)"
         assert len(chunk_times) > 2, "Should receive multiple chunks for streaming"
 
         full_response = "".join(chunks)
