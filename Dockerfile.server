@@ -3,8 +3,9 @@ FROM registry.access.redhat.com/ubi9/python-312 as build
 USER 0
 WORKDIR /app
 
+COPY requirements.txt ./
 RUN . /cachi2/cachi2.env && \
-    pip install --no-cache-dir poetry==1.8.2 pyyaml==6.0.2
+    pip install --no-cache-dir -r requirements.txt
 
 COPY pyproject.toml poetry.lock* README.md ./
 COPY nemoguardrails/ ./nemoguardrails/
@@ -24,7 +25,7 @@ ENV POETRY_VIRTUALENVS_IN_PROJECT=1 \
 RUN . /cachi2/cachi2.env && \
     poetry install --no-ansi --extras="sdd jailbreak openai nvidia tracing" && \
     poetry run pip install "spacy>=3.4.4,<4.0.0" && \
-    poetry run python -m spacy download en_core_web_lg
+    poetry run pip install /cachi2/output/deps/generic/en_core_web_lg-3.7.1-py3-none-any.whl
 
 FROM registry.access.redhat.com/ubi9/python-312
 
