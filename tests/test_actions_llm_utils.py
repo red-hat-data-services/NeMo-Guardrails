@@ -13,12 +13,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+from langchain_core.messages import AIMessage
+
 from nemoguardrails.actions.llm.utils import (
-    _extract_and_remove_think_tags,
+    _extract_reasoning_from_additional_kwargs,
+    _extract_reasoning_from_content_blocks,
+    _extract_tool_calls_from_attribute,
+    _extract_tool_calls_from_content_blocks,
     _infer_provider_from_module,
     _store_reasoning_traces,
+    _store_tool_calls,
 )
-from nemoguardrails.context import reasoning_trace_var
+from nemoguardrails.context import reasoning_trace_var, tool_calls_var
+
+
+@pytest.fixture(autouse=True)
+def reset_context_vars():
+    reasoning_token = reasoning_trace_var.set(None)
+    tool_calls_token = tool_calls_var.set(None)
+
+    yield
+
+    reasoning_trace_var.reset(reasoning_token)
+    tool_calls_var.reset(tool_calls_token)
 
 
 class MockOpenAILLM:
@@ -131,176 +149,386 @@ def test_infer_provider_deeply_nested_inheritance():
 
 
 class MockResponse:
-    def __init__(self, content="", additional_kwargs=None):
-        self.content = content
-        self.additional_kwargs = additional_kwargs or {}
+    def __init__(self, content_blocks=None, additional_kwargs=None, tool_calls=None):
+        if content_blocks is not None:
+            self.content_blocks = content_blocks
+        if additional_kwargs is not None:
+            self.additional_kwargs = additional_kwargs
+        if tool_calls is not None:
+            self.tool_calls = tool_calls
+
+
+def test_extract_reasoning_from_content_blocks_single_reasoning():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "reasoning", "reasoning": "foo"},
+        ]
+    )
+    reasoning = _extract_reasoning_from_content_blocks(response)
+    assert reasoning == "foo"
+
+
+def test_extract_reasoning_from_content_blocks_with_text_and_reasoning():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "text", "text": "bar"},
+            {"type": "reasoning", "reasoning": "Let me think about this problem..."},
+        ]
+    )
+    reasoning = _extract_reasoning_from_content_blocks(response)
+    assert reasoning == "Let me think about this problem..."
+
+
+def test_extract_reasoning_from_content_blocks_returns_first_reasoning():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "reasoning", "reasoning": "First thought"},
+            {"type": "reasoning", "reasoning": "Second thought"},
+        ]
+    )
+    reasoning = _extract_reasoning_from_content_blocks(response)
+    assert reasoning == "First thought"
+
+
+def test_extract_reasoning_from_content_blocks_no_reasoning():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "text", "text": "Hello"},
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
+        ]
+    )
+    reasoning = _extract_reasoning_from_content_blocks(response)
+    assert reasoning is None
+
+
+def test_extract_reasoning_from_content_blocks_no_attribute():
+    response = MockResponse()
+    reasoning = _extract_reasoning_from_content_blocks(response)
+    assert reasoning is None
+
+
+def test_extract_reasoning_from_additional_kwargs_with_reasoning_content():
+    response = MockResponse(additional_kwargs={"reasoning_content": "Let me think about this problem..."})
+    reasoning = _extract_reasoning_from_additional_kwargs(response)
+    assert reasoning == "Let me think about this problem..."
+
+
+def test_extract_reasoning_from_additional_kwargs_no_reasoning_content():
+    response = MockResponse(additional_kwargs={"other_field": "some value"})
+    reasoning = _extract_reasoning_from_additional_kwargs(response)
+    assert reasoning is None
+
+
+def test_extract_reasoning_from_additional_kwargs_no_attribute():
+    response = MockResponse()
+    reasoning = _extract_reasoning_from_additional_kwargs(response)
+    assert reasoning is None
+
+
+def test_extract_reasoning_from_additional_kwargs_not_dict():
+    response = MockResponse(additional_kwargs="not a dict")
+    reasoning = _extract_reasoning_from_additional_kwargs(response)
+    assert reasoning is None
+
+
+def test_extract_tool_calls_from_content_blocks_single_tool_call():
+    expected_tool_call = {
+        "type": "tool_call",
+        "name": "foo",
+        "args": {"a": "b"},
+        "id": "abc_123",
+    }
+    response = MockResponse(content_blocks=[expected_tool_call])
+    tool_calls = _extract_tool_calls_from_content_blocks(response)
+    assert tool_calls is not None
+    assert len(tool_calls) == 1
+    assert tool_calls[0] == expected_tool_call
+
+
+def test_extract_tool_calls_from_content_blocks_multiple_tool_calls():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
+            {"type": "tool_call", "name": "bar", "args": {"c": "d"}, "id": "abc_234"},
+        ]
+    )
+    tool_calls = _extract_tool_calls_from_content_blocks(response)
+    assert tool_calls is not None
+    assert len(tool_calls) == 2
+    assert tool_calls[0]["name"] == "foo"
+    assert tool_calls[1]["name"] == "bar"
+
+
+def test_extract_tool_calls_from_content_blocks_mixed_content():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "text", "text": "Hello"},
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
+            {"type": "reasoning", "reasoning": "Thinking..."},
+            {"type": "tool_call", "name": "bar", "args": {"c": "d"}, "id": "abc_234"},
+        ]
+    )
+    tool_calls = _extract_tool_calls_from_content_blocks(response)
+    assert tool_calls is not None
+    assert len(tool_calls) == 2
+    assert tool_calls[0]["name"] == "foo"
+    assert tool_calls[1]["name"] == "bar"
+
+
+def test_extract_tool_calls_from_content_blocks_no_tool_calls():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "text", "text": "Hello"},
+            {"type": "reasoning", "reasoning": "Thinking..."},
+        ]
+    )
+    tool_calls = _extract_tool_calls_from_content_blocks(response)
+    assert tool_calls is None
+
+
+def test_extract_tool_calls_from_content_blocks_no_attribute():
+    response = MockResponse()
+    tool_calls = _extract_tool_calls_from_content_blocks(response)
+    assert tool_calls is None
+
+
+def test_extract_tool_calls_from_attribute_with_tool_calls():
+    response = MockResponse(
+        tool_calls=[
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
+            {"type": "tool_call", "name": "bar", "args": {"c": "d"}, "id": "abc_234"},
+        ]
+    )
+    tool_calls = _extract_tool_calls_from_attribute(response)
+    assert tool_calls is not None
+    assert len(tool_calls) == 2
+    assert tool_calls[0]["name"] == "foo"
+    assert tool_calls[1]["name"] == "bar"
+
+
+def test_extract_tool_calls_from_attribute_no_attribute():
+    response = MockResponse()
+    tool_calls = _extract_tool_calls_from_attribute(response)
+    assert tool_calls is None
+
+
+def test_store_reasoning_traces_from_content_blocks():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "text", "text": "The answer is 42."},
+            {"type": "reasoning", "reasoning": "Let me think about this problem..."},
+        ]
+    )
+    _store_reasoning_traces(response)
+
+    reasoning = reasoning_trace_var.get()
+    assert reasoning == "Let me think about this problem..."
 
 
 def test_store_reasoning_traces_from_additional_kwargs():
-    reasoning_trace_var.set(None)
+    response = MockResponse(additional_kwargs={"reasoning_content": "Provider specific reasoning"})
+    _store_reasoning_traces(response)
 
+    reasoning = reasoning_trace_var.get()
+    assert reasoning == "Provider specific reasoning"
+
+
+def test_store_reasoning_traces_prefers_content_blocks_over_additional_kwargs():
     response = MockResponse(
-        content="The answer is 42",
-        additional_kwargs={"reasoning_content": "Let me think about this..."},
+        content_blocks=[
+            {"type": "reasoning", "reasoning": "Content blocks reasoning"},
+        ],
+        additional_kwargs={"reasoning_content": "Additional kwargs reasoning"},
     )
-
     _store_reasoning_traces(response)
 
-    assert reasoning_trace_var.get() == "Let me think about this..."
+    reasoning = reasoning_trace_var.get()
+    assert reasoning == "Content blocks reasoning"
 
 
-def test_store_reasoning_traces_from_think_tags():
-    reasoning_trace_var.set(None)
-
+def test_store_reasoning_traces_fallback_to_additional_kwargs():
     response = MockResponse(
-        content="<think>Let me think about this...</think>The answer is 42"
+        content_blocks=[
+            {"type": "text", "text": "No reasoning here"},
+        ],
+        additional_kwargs={"reasoning_content": "Fallback reasoning"},
     )
-
     _store_reasoning_traces(response)
 
-    assert reasoning_trace_var.get() == "Let me think about this..."
-    assert response.content == "The answer is 42"
+    reasoning = reasoning_trace_var.get()
+    assert reasoning == "Fallback reasoning"
 
 
-def test_store_reasoning_traces_multiline_think_tags():
-    reasoning_trace_var.set(None)
-
+def test_store_reasoning_traces_no_reasoning():
     response = MockResponse(
-        content="<think>Step 1: Analyze the problem\nStep 2: Consider options\nStep 3: Choose solution</think>The answer is 42"
+        content_blocks=[
+            {"type": "text", "text": "Just text"},
+        ]
     )
-
     _store_reasoning_traces(response)
 
-    assert (
-        reasoning_trace_var.get()
-        == "Step 1: Analyze the problem\nStep 2: Consider options\nStep 3: Choose solution"
-    )
-    assert response.content == "The answer is 42"
+    reasoning = reasoning_trace_var.get()
+    assert reasoning is None
 
 
-def test_store_reasoning_traces_prefers_additional_kwargs():
-    reasoning_trace_var.set(None)
-
+def test_store_tool_calls_from_content_blocks():
     response = MockResponse(
-        content="<think>This should not be used</think>The answer is 42",
-        additional_kwargs={"reasoning_content": "This should be used"},
+        content_blocks=[
+            {"type": "text", "text": "Hello"},
+            {
+                "type": "tool_call",
+                "name": "search",
+                "args": {"query": "weather"},
+                "id": "call_1",
+            },
+            {
+                "type": "tool_call",
+                "name": "calculator",
+                "args": {"expr": "2+2"},
+                "id": "call_2",
+            },
+        ]
     )
+    _store_tool_calls(response)
 
-    _store_reasoning_traces(response)
-
-    assert reasoning_trace_var.get() == "This should be used"
-
-
-def test_store_reasoning_traces_no_reasoning_content():
-    reasoning_trace_var.set(None)
-
-    response = MockResponse(content="The answer is 42")
-
-    _store_reasoning_traces(response)
-
-    assert reasoning_trace_var.get() is None
+    tool_calls = tool_calls_var.get()
+    assert tool_calls is not None
+    assert len(tool_calls) == 2
+    assert tool_calls[0]["name"] == "search"
+    assert tool_calls[1]["name"] == "calculator"
 
 
-def test_store_reasoning_traces_empty_reasoning_content():
-    reasoning_trace_var.set(None)
-
+def test_store_tool_calls_from_attribute():
     response = MockResponse(
-        content="The answer is 42", additional_kwargs={"reasoning_content": ""}
+        tool_calls=[
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
+            {"type": "tool_call", "name": "bar", "args": {"c": "d"}, "id": "abc_234"},
+        ]
     )
+    _store_tool_calls(response)
 
-    _store_reasoning_traces(response)
-
-    assert reasoning_trace_var.get() is None
-
-
-def test_store_reasoning_traces_incomplete_think_tags():
-    reasoning_trace_var.set(None)
-
-    response = MockResponse(content="<think>This is incomplete")
-
-    _store_reasoning_traces(response)
-
-    assert reasoning_trace_var.get() is None
+    tool_calls = tool_calls_var.get()
+    assert tool_calls is not None
+    assert len(tool_calls) == 2
+    assert tool_calls[0]["name"] == "foo"
+    assert tool_calls[1]["name"] == "bar"
 
 
-def test_store_reasoning_traces_no_content_attribute():
-    reasoning_trace_var.set(None)
-
-    class ResponseWithoutContent:
-        def __init__(self):
-            self.additional_kwargs = {}
-
-    response = ResponseWithoutContent()
-
-    _store_reasoning_traces(response)
-
-    assert reasoning_trace_var.get() is None
-
-
-def test_store_reasoning_traces_removes_think_tags_with_whitespace():
-    reasoning_trace_var.set(None)
-
+def test_store_tool_calls_prefers_content_blocks_over_attribute():
     response = MockResponse(
-        content="  <think>reasoning here</think>  \n\n  Final answer  "
+        content_blocks=[
+            {"type": "tool_call", "name": "from_blocks", "args": {}, "id": "1"},
+        ],
+        tool_calls=[
+            {"type": "tool_call", "name": "from_attribute", "args": {}, "id": "2"},
+        ],
+    )
+    _store_tool_calls(response)
+
+    tool_calls = tool_calls_var.get()
+    assert tool_calls is not None
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["name"] == "from_blocks"
+
+
+def test_store_tool_calls_fallback_to_attribute():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "text", "text": "No tool calls here"},
+        ],
+        tool_calls=[
+            {"type": "tool_call", "name": "fallback_tool", "args": {}, "id": "1"},
+        ],
+    )
+    _store_tool_calls(response)
+
+    tool_calls = tool_calls_var.get()
+    assert tool_calls is not None
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["name"] == "fallback_tool"
+
+
+def test_store_tool_calls_no_tool_calls():
+    response = MockResponse(
+        content_blocks=[
+            {"type": "text", "text": "Just text"},
+        ]
+    )
+    _store_tool_calls(response)
+
+    tool_calls = tool_calls_var.get()
+    assert tool_calls is None
+
+
+def test_store_reasoning_traces_with_real_aimessage_from_content_blocks():
+    message = AIMessage(
+        content="The answer is 42.",
+        additional_kwargs={"reasoning_content": "Let me think about this problem..."},
     )
 
-    _store_reasoning_traces(response)
+    _store_reasoning_traces(message)
 
-    assert reasoning_trace_var.get() == "reasoning here"
-    assert response.content == "Final answer"
-
-
-def test_extract_and_remove_think_tags_basic():
-    response = MockResponse(content="<think>reasoning</think>answer")
-
-    result = _extract_and_remove_think_tags(response)
-
-    assert result == "reasoning"
-    assert response.content == "answer"
+    reasoning = reasoning_trace_var.get()
+    assert reasoning == "Let me think about this problem..."
 
 
-def test_extract_and_remove_think_tags_multiline():
-    response = MockResponse(content="<think>line1\nline2\nline3</think>final answer")
+def test_store_reasoning_traces_with_real_aimessage_no_reasoning():
+    message = AIMessage(
+        content="The answer is 42.",
+        additional_kwargs={"other_field": "some value"},
+    )
 
-    result = _extract_and_remove_think_tags(response)
+    _store_reasoning_traces(message)
 
-    assert result == "line1\nline2\nline3"
-    assert response.content == "final answer"
-
-
-def test_extract_and_remove_think_tags_no_tags():
-    response = MockResponse(content="just a normal response")
-
-    result = _extract_and_remove_think_tags(response)
-
-    assert result is None
-    assert response.content == "just a normal response"
+    reasoning = reasoning_trace_var.get()
+    assert reasoning is None
 
 
-def test_extract_and_remove_think_tags_incomplete():
-    response = MockResponse(content="<think>incomplete")
+def test_store_tool_calls_with_real_aimessage_from_content_blocks():
+    message = AIMessage(
+        "",
+        tool_calls=[{"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"}],
+    )
 
-    result = _extract_and_remove_think_tags(response)
+    _store_tool_calls(message)
 
-    assert result is None
-    assert response.content == "<think>incomplete"
-
-
-def test_extract_and_remove_think_tags_no_content_attribute():
-    class ResponseWithoutContent:
-        pass
-
-    response = ResponseWithoutContent()
-
-    result = _extract_and_remove_think_tags(response)
-
-    assert result is None
+    tool_calls = tool_calls_var.get()
+    assert tool_calls is not None
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["type"] == "tool_call"
+    assert tool_calls[0]["name"] == "foo"
+    assert tool_calls[0]["args"] == {"a": "b"}
+    assert tool_calls[0]["id"] == "abc_123"
 
 
-def test_extract_and_remove_think_tags_wrong_order():
-    response = MockResponse(content="</think> text here <think>")
+def test_store_tool_calls_with_real_aimessage_mixed_content():
+    message = AIMessage(
+        "foo",
+        tool_calls=[{"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"}],
+    )
 
-    result = _extract_and_remove_think_tags(response)
+    _store_tool_calls(message)
 
-    assert result is None
-    assert response.content == "</think> text here <think>"
+    tool_calls = tool_calls_var.get()
+    assert tool_calls is not None
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["type"] == "tool_call"
+    assert tool_calls[0]["name"] == "foo"
+
+
+def test_store_tool_calls_with_real_aimessage_multiple_tool_calls():
+    message = AIMessage(
+        "",
+        tool_calls=[
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
+            {"type": "tool_call", "name": "bar", "args": {"c": "d"}, "id": "abc_234"},
+        ],
+    )
+
+    _store_tool_calls(message)
+
+    tool_calls = tool_calls_var.get()
+    assert tool_calls is not None
+    assert len(tool_calls) == 2
+    assert tool_calls[0]["name"] == "foo"
+    assert tool_calls[1]["name"] == "bar"

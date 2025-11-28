@@ -17,10 +17,8 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, Sequence, Union
 
-logger = logging.getLogger(__name__)
-
-from langchain.base_language import BaseLanguageModel
-from langchain.callbacks.base import AsyncCallbackHandler, BaseCallbackManager
+from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackManager
+from langchain_core.language_models import BaseLanguageModel
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.base import Runnable
 
@@ -35,6 +33,8 @@ from nemoguardrails.context import (
 from nemoguardrails.integrations.langchain.message_utils import dicts_to_messages
 from nemoguardrails.logging.callbacks import logging_callbacks
 from nemoguardrails.logging.explain import LLMCallInfo
+
+logger = logging.getLogger(__name__)
 
 
 class LLMCallException(Exception):
@@ -169,13 +169,9 @@ async def llm_call(
     )
 
     if isinstance(prompt, str):
-        response = await _invoke_with_string_prompt(
-            generation_llm, prompt, all_callbacks
-        )
+        response = await _invoke_with_string_prompt(generation_llm, prompt, all_callbacks)
     else:
-        response = await _invoke_with_message_list(
-            generation_llm, prompt, all_callbacks
-        )
+        response = await _invoke_with_message_list(generation_llm, prompt, all_callbacks)
 
     _store_reasoning_traces(response)
     _store_tool_calls(response)
@@ -183,9 +179,7 @@ async def llm_call(
     return _extract_content(response)
 
 
-def _setup_llm_call_info(
-    llm: BaseLanguageModel, model_name: Optional[str], model_provider: Optional[str]
-) -> None:
+def _setup_llm_call_info(llm: BaseLanguageModel, model_name: Optional[str], model_provider: Optional[str]) -> None:
     """Initialize or update LLM call info in context."""
     llm_call_info = llm_call_info_var.get()
     if llm_call_info is None:
@@ -203,8 +197,7 @@ def _prepare_callbacks(
     if custom_callback_handlers and custom_callback_handlers != [None]:
         return BaseCallbackManager(
             handlers=logging_callbacks.handlers + list(custom_callback_handlers),
-            inheritable_handlers=logging_callbacks.handlers
-            + list(custom_callback_handlers),
+            inheritable_handlers=logging_callbacks.handlers + list(custom_callback_handlers),
         )
     return logging_callbacks
 
@@ -243,15 +236,18 @@ def _convert_messages_to_langchain_format(prompt: List[dict]) -> List:
 def _store_reasoning_traces(response) -> None:
     """Store reasoning traces from response in context variable.
 
-    Extracts reasoning content from response.additional_kwargs["reasoning_content"]
-    if available. Otherwise, falls back to extracting from <think> tags in the
-    response content (and removes the tags from content).
+    Tries multiple extraction methods in order of preference:
+    1. content_blocks with type="reasoning" (LangChain v1 standard)
+    2. additional_kwargs["reasoning_content"] (provider-specific)
+    3. <think> tags in content (legacy fallback)
 
     Args:
         response: The LLM response object
     """
+    reasoning_content = _extract_reasoning_from_content_blocks(response)
 
-    reasoning_content = _extract_reasoning_content(response)
+    if not reasoning_content:
+        reasoning_content = _extract_reasoning_from_additional_kwargs(response)
 
     if not reasoning_content:
         # Some LLM providers (e.g., certain NVIDIA models) embed reasoning in <think> tags
@@ -263,14 +259,27 @@ def _store_reasoning_traces(response) -> None:
         reasoning_trace_var.set(reasoning_content)
 
 
-def _extract_reasoning_content(response):
+def _extract_reasoning_from_content_blocks(response) -> Optional[str]:
+    """Extract reasoning from content_blocks with type='reasoning'.
+
+    This is the LangChain v1 standard for structured content blocks.
+    """
+    if hasattr(response, "content_blocks"):
+        for block in response.content_blocks:
+            if block.get("type") == "reasoning":
+                return block.get("reasoning")
+    return None
+
+
+def _extract_reasoning_from_additional_kwargs(response) -> Optional[str]:
+    """Extract reasoning from additional_kwargs['reasoning_content'].
+
+    This is used by some providers for backward compatibility.
+    """
     if hasattr(response, "additional_kwargs"):
         additional_kwargs = response.additional_kwargs
-        if (
-            isinstance(additional_kwargs, dict)
-            and "reasoning_content" in additional_kwargs
-        ):
-            return additional_kwargs["reasoning_content"]
+        if isinstance(additional_kwargs, dict):
+            return additional_kwargs.get("reasoning_content")
     return None
 
 
@@ -308,17 +317,31 @@ def _extract_and_remove_think_tags(response) -> Optional[str]:
     match = re.search(r"<think>(.*?)</think>", content, re.DOTALL)
     if match:
         reasoning_content = match.group(1).strip()
-        response.content = re.sub(
-            r"<think>.*?</think>", "", content, flags=re.DOTALL
-        ).strip()
+        response.content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
         return reasoning_content
     return None
 
 
 def _store_tool_calls(response) -> None:
     """Extract and store tool calls from response in context."""
-    tool_calls = getattr(response, "tool_calls", None)
+    tool_calls = _extract_tool_calls_from_content_blocks(response)
+    if not tool_calls:
+        tool_calls = _extract_tool_calls_from_attribute(response)
     tool_calls_var.set(tool_calls)
+
+
+def _extract_tool_calls_from_content_blocks(response) -> List | None:
+    if hasattr(response, "content_blocks"):
+        tool_calls = []
+        for block in response.content_blocks:
+            if block.get("type") == "tool_call":
+                tool_calls.append(block)
+        return tool_calls if tool_calls else None
+    return None
+
+
+def _extract_tool_calls_from_attribute(response) -> List | None:
+    return getattr(response, "tool_calls", None)
 
 
 def _store_response_metadata(response) -> None:
@@ -329,9 +352,7 @@ def _store_response_metadata(response) -> None:
     if hasattr(response, "model_fields"):
         metadata = {}
         for field_name in response.model_fields:
-            if (
-                field_name != "content"
-            ):  # Exclude content since it may be modified by rails
+            if field_name != "content":  # Exclude content since it may be modified by rails
                 metadata[field_name] = getattr(response, field_name)
         llm_response_metadata_var.set(metadata)
 
@@ -404,22 +425,12 @@ def get_colang_history(
             elif event["type"] == "StartUtteranceBotAction" and include_texts:
                 history += f'  "{event["script"]}"\n'
             # We skip system actions from this log
-            elif event["type"] == "StartInternalSystemAction" and not event.get(
-                "is_system_action"
-            ):
-                if (
-                    remove_retrieval_events
-                    and event["action_name"] == "retrieve_relevant_chunks"
-                ):
+            elif event["type"] == "StartInternalSystemAction" and not event.get("is_system_action"):
+                if remove_retrieval_events and event["action_name"] == "retrieve_relevant_chunks":
                     continue
                 history += f"execute {event['action_name']}\n"
-            elif event["type"] == "InternalSystemActionFinished" and not event.get(
-                "is_system_action"
-            ):
-                if (
-                    remove_retrieval_events
-                    and event["action_name"] == "retrieve_relevant_chunks"
-                ):
+            elif event["type"] == "InternalSystemActionFinished" and not event.get("is_system_action"):
+                if remove_retrieval_events and event["action_name"] == "retrieve_relevant_chunks":
                     continue
 
                 # We make sure the return value is a string with no new lines
@@ -448,19 +459,14 @@ def get_colang_history(
             if (
                 event.name == InternalEvents.USER_ACTION_LOG
                 and previous_event
-                and events_to_dialog_history([previous_event])
-                == events_to_dialog_history([event])
+                and events_to_dialog_history([previous_event]) == events_to_dialog_history([event])
             ):
                 # Remove duplicated user action log events that stem from the same user event as the previous event
                 continue
 
-            if (
-                event.name == InternalEvents.BOT_ACTION_LOG
-                or event.name == InternalEvents.USER_ACTION_LOG
-            ):
+            if event.name == InternalEvents.BOT_ACTION_LOG or event.name == InternalEvents.USER_ACTION_LOG:
                 if len(action_group) > 0 and (
-                    current_intent is None
-                    or current_intent != event.arguments["intent_flow_id"]
+                    current_intent is None or current_intent != event.arguments["intent_flow_id"]
                 ):
                     new_history.append(events_to_dialog_history(action_group))
                     new_history.append("")
@@ -470,10 +476,7 @@ def get_colang_history(
                 current_intent = event.arguments["intent_flow_id"]
 
                 previous_event = event
-            elif (
-                event.name == InternalEvents.BOT_INTENT_LOG
-                or event.name == InternalEvents.USER_INTENT_LOG
-            ):
+            elif event.name == InternalEvents.BOT_INTENT_LOG or event.name == InternalEvents.USER_INTENT_LOG:
                 if event.arguments["flow_id"] == current_intent:
                     # Found parent of current group
                     if event.name == InternalEvents.BOT_INTENT_LOG:
@@ -585,16 +588,12 @@ def get_last_user_utterance(events: List[dict]) -> Optional[str]:
     return None
 
 
-def get_retrieved_relevant_chunks(
-    events: List[dict], skip_user_message: Optional[bool] = False
-) -> Optional[str]:
+def get_retrieved_relevant_chunks(events: List[dict], skip_user_message: Optional[bool] = False) -> Optional[str]:
     """Returns the retrieved chunks for current user utterance from the events."""
     for event in reversed(events):
         if not skip_user_message and event["type"] == "UserMessage":
             break
-        if event["type"] == "ContextUpdate" and "relevant_chunks" in event.get(
-            "data", {}
-        ):
+        if event["type"] == "ContextUpdate" and "relevant_chunks" in event.get("data", {}):
             return (event["data"]["relevant_chunks"] or "").strip()
 
     return None
@@ -772,9 +771,7 @@ def get_first_bot_action(strings: List[str]) -> Optional[str]:
                 action += "\n"
             action += string.replace("bot action: ", "")
             action_started = True
-        elif (
-            string.startswith("  and") or string.startswith("  or")
-        ) and action_started:
+        elif (string.startswith("  and") or string.startswith("  or")) and action_started:
             action = action + string
         elif string == "":
             action_started = False
@@ -787,12 +784,7 @@ def get_first_bot_action(strings: List[str]) -> Optional[str]:
 def escape_flow_name(name: str) -> str:
     """Escape invalid keywords in flow names."""
     # TODO: We need to figure out how we can distinguish from valid flow parameters
-    result = (
-        name.replace(" and ", "_and_")
-        .replace(" or ", "_or_")
-        .replace(" as ", "_as_")
-        .replace("-", "_")
-    )
+    result = name.replace(" and ", "_and_").replace(" or ", "_or_").replace(" as ", "_as_").replace("-", "_")
     result = re.sub(r"\b\d+\b", lambda match: f"_{match.group()}_", result)
     # removes non-word chars and leading digits in a word
     result = re.sub(r"\b\d+|[^\w\s]", "", result)

@@ -13,14 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableConfig
-from langchain_core.runnables.utils import Input, Output
 
 from nemoguardrails import RailsConfig
 from nemoguardrails.integrations.langchain.runnable_rails import RunnableRails
@@ -28,12 +24,9 @@ from nemoguardrails.integrations.langchain.runnable_rails import RunnableRails
 
 def has_nvidia_ai_endpoints():
     """Check if NVIDIA AI Endpoints package is installed."""
-    try:
-        import langchain_nvidia_ai_endpoints
+    from nemoguardrails.imports import check_optional_dependency
 
-        return True
-    except ImportError:
-        return False
+    return check_optional_dependency("langchain_nvidia_ai_endpoints")
 
 
 @pytest.mark.skipif(
@@ -400,9 +393,7 @@ def test_complex_chain_with_tool_calls():
         """,
     )
 
-    guardrails = RunnableRails(
-        config=config, llm=MockPatientIntakeLLM(), passthrough=True
-    )
+    guardrails = RunnableRails(config=config, llm=MockPatientIntakeLLM(), passthrough=True)
 
     chain = prompt | guardrails
 

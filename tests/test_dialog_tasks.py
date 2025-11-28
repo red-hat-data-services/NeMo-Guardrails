@@ -14,20 +14,13 @@
 # limitations under the License.
 
 import os
-from unittest.mock import Mock, patch
 
 import pytest
 
 from nemoguardrails import LLMRails, RailsConfig
-from nemoguardrails.llm.taskmanager import LLMTaskManager
-from nemoguardrails.llm.types import Task
+from nemoguardrails.imports import check_optional_dependency
 
-try:
-    import langchain_openai
-
-    has_langchain_openai = True
-except ImportError:
-    has_langchain_openai = False
+has_langchain_openai = check_optional_dependency("langchain_openai")
 
 has_openai_key = bool(os.getenv("OPENAI_API_KEY"))
 

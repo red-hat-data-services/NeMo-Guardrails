@@ -16,7 +16,7 @@
 import logging
 from typing import Optional
 
-from langchain_core.language_models.llms import BaseLLM
+from langchain_core.language_models import BaseLLM
 
 from nemoguardrails import RailsConfig
 from nemoguardrails.actions import action
@@ -89,9 +89,7 @@ async def self_check_output(
         if llm_task_manager.has_output_parser(task):
             result = llm_task_manager.parse_task_output(task, output=response)
         else:
-            result = llm_task_manager.parse_task_output(
-                task, output=response, forced_output_parser="is_content_safe"
-            )
+            result = llm_task_manager.parse_task_output(task, output=response, forced_output_parser="is_content_safe")
 
         is_safe = result[0]
 

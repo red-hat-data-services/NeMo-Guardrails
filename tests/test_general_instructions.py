@@ -17,7 +17,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nemoguardrails import RailsConfig
 from nemoguardrails.actions.llm.generation import LLMGenerationActions
 from nemoguardrails.llm.taskmanager import LLMTaskManager
 from nemoguardrails.rails.llm.config import Instruction, Model, RailsConfig
@@ -48,9 +47,7 @@ def test_general_instructions_get_included_when_no_canonical_forms_are_defined()
     chat << "Hello there!"
 
     info = chat.app.explain()
-    assert (
-        "This is a conversation between a user and a bot." in info.llm_calls[0].prompt
-    )
+    assert "This is a conversation between a user and a bot." in info.llm_calls[0].prompt
 
 
 def test_get_general_instructions_none():
@@ -177,9 +174,7 @@ async def test_generate_next_step_empty_event_list():
         get_embedding_search_provider_instance=MagicMock(),
     )
 
-    with pytest.raises(
-        RuntimeError, match="No last user intent found from which to generate next step"
-    ):
+    with pytest.raises(RuntimeError, match="No last user intent found from which to generate next step"):
         _ = await actions.generate_next_step(events=[])
 
 

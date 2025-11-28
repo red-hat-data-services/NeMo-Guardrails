@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -23,7 +23,6 @@ from langchain_core.language_models import BaseChatModel
 from nemoguardrails import LLMRails, RailsConfig
 from nemoguardrails.logging.explain import ExplainInfo
 from nemoguardrails.rails.llm.config import Model
-from nemoguardrails.rails.llm.llmrails import get_action_details_from_flow_id
 from tests.conftest import REASONING_TRACE_MOCK_PATH
 from tests.utils import FakeLLM, clean_events, event_sequence_conforms
 
@@ -97,9 +96,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "UserMessage", "text": "$user_message"}
-            },
+            "action_params": {"event": {"_type": "UserMessage", "text": "$user_message"}},
             "action_result_key": None,
             "is_system_action": True,
             "source_uid": "NeMoGuardrails",
@@ -107,9 +104,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "UserMessage", "text": "$user_message"}
-            },
+            "action_params": {"event": {"_type": "UserMessage", "text": "$user_message"}},
             "action_result_key": None,
             "events": [
                 {
@@ -234,9 +229,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}
-            },
+            "action_params": {"event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}},
             "action_result_key": None,
             "is_system_action": True,
             "source_uid": "NeMoGuardrails",
@@ -244,9 +237,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}
-            },
+            "action_params": {"event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}},
             "action_result_key": None,
             "events": [
                 {
@@ -295,9 +286,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "UserMessage", "text": "$user_message"}
-            },
+            "action_params": {"event": {"_type": "UserMessage", "text": "$user_message"}},
             "action_result_key": None,
             "is_system_action": True,
             "source_uid": "NeMoGuardrails",
@@ -305,9 +294,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "UserMessage", "text": "$user_message"}
-            },
+            "action_params": {"event": {"_type": "UserMessage", "text": "$user_message"}},
             "action_result_key": None,
             "events": [
                 {
@@ -447,9 +434,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}
-            },
+            "action_params": {"event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}},
             "action_result_key": None,
             "is_system_action": True,
             "source_uid": "NeMoGuardrails",
@@ -457,9 +442,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}
-            },
+            "action_params": {"event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}},
             "action_result_key": None,
             "events": [
                 {
@@ -552,9 +535,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}
-            },
+            "action_params": {"event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}},
             "action_result_key": None,
             "is_system_action": True,
             "source_uid": "NeMoGuardrails",
@@ -562,9 +543,7 @@ async def test_1(rails_config):
         },
         {
             "action_name": "create_event",
-            "action_params": {
-                "event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}
-            },
+            "action_params": {"event": {"_type": "StartUtteranceBotAction", "script": "$bot_message"}},
             "action_result_key": None,
             "events": [
                 {
@@ -672,9 +651,7 @@ async def test_llm_config_precedence(mock_init, llm_config_with_main):
     events = [{"type": "UtteranceUserActionFinished", "final_transcript": "Hello!"}]
     new_events = await llm_rails.runtime.generate_events(events)
     assert any(event.get("intent") == "express greeting" for event in new_events)
-    assert not any(
-        event.get("intent") == "this should not be used" for event in new_events
-    )
+    assert not any(event.get("intent") == "this should not be used" for event in new_events)
 
 
 @pytest.mark.asyncio
@@ -782,16 +759,14 @@ async def test_llm_constructor_with_empty_models_config():
     "nemoguardrails.rails.llm.llmrails.init_llm_model",
     return_value=FakeLLM(responses=["safe"]),
 )
-async def test_main_llm_from_config_registered_as_action_param(
-    mock_init, llm_config_with_main
-):
+async def test_main_llm_from_config_registered_as_action_param(mock_init, llm_config_with_main):
     """Test that main LLM initialized from config is properly registered as action parameter.
 
     This test ensures that when no LLM is provided via constructor and the main LLM
     is initialized from the config, it gets properly registered as an action parameter.
     This prevents the regression where actions expecting an 'llm' parameter would receive None.
     """
-    from langchain_core.language_models.llms import BaseLLM
+    from langchain_core.language_models import BaseLLM
 
     from nemoguardrails.actions import action
 
@@ -827,10 +802,7 @@ async def test_main_llm_from_config_registered_as_action_param(
 
     action_finished_event = None
     for event in result_events:
-        if (
-            event["type"] == "InternalSystemActionFinished"
-            and event["action_name"] == "test_llm_action"
-        ):
+        if event["type"] == "InternalSystemActionFinished" and event["action_name"] == "test_llm_action":
             action_finished_event = event
             break
 
@@ -1128,9 +1100,7 @@ def test_register_methods_return_self():
         def search(self, text, max_results=5):
             return []
 
-    result = rails.register_embedding_search_provider(
-        "dummy_provider", DummyEmbeddingProvider
-    )
+    result = rails.register_embedding_search_provider("dummy_provider", DummyEmbeddingProvider)
     assert result is rails, "register_embedding_search_provider should return self"
 
     # Test register_embedding_provider returns self
@@ -1453,9 +1423,7 @@ async def test_generate_async_reasoning_with_thinking_tags():
         llm = FakeLLM(responses=["The answer is 42"])
         llm_rails = LLMRails(config=config, llm=llm)
 
-        result = await llm_rails.generate_async(
-            messages=[{"role": "user", "content": "What is the answer?"}]
-        )
+        result = await llm_rails.generate_async(messages=[{"role": "user", "content": "What is the answer?"}])
 
         expected_prefix = f"<think>{test_reasoning_trace}</think>\n"
         assert result["content"].startswith(expected_prefix)
@@ -1471,9 +1439,7 @@ async def test_generate_async_no_thinking_tags_when_no_reasoning():
         llm = FakeLLM(responses=["Regular response"])
         llm_rails = LLMRails(config=config, llm=llm)
 
-        result = await llm_rails.generate_async(
-            messages=[{"role": "user", "content": "Hello"}]
-        )
+        result = await llm_rails.generate_async(messages=[{"role": "user", "content": "Hello"}])
 
         assert not result["content"].startswith("<think>")
         assert result["content"] == "Regular response"

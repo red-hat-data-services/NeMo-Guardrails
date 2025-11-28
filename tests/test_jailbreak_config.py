@@ -15,8 +15,6 @@
 import os
 from unittest.mock import patch
 
-from pydantic import SecretStr
-
 from nemoguardrails.rails.llm.config import JailbreakDetectionConfig
 
 
@@ -64,9 +62,7 @@ class TestJailbreakDetectionConfig:
 
     def test_no_migration_when_nim_base_url_already_set(self):
         """Test that migration doesn't occur when nim_base_url is already set."""
-        config = JailbreakDetectionConfig(
-            nim_base_url="http://existing:9999/v1", nim_url="localhost", nim_port=8000
-        )
+        config = JailbreakDetectionConfig(nim_base_url="http://existing:9999/v1", nim_url="localhost", nim_port=8000)
 
         # Should not override existing nim_base_url
         assert config.nim_base_url == "http://existing:9999/v1"

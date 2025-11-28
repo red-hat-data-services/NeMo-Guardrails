@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import asyncio
-from typing import List, Optional
+from typing import List
 
 from .base import EmbeddingModel
 
@@ -49,10 +49,7 @@ class GoogleEmbeddingModel(EmbeddingModel):
             from google import genai  # type: ignore[import]
 
         except ImportError:
-            raise ImportError(
-                "Could not import google-genai, please install it with "
-                "`pip install google-genai`."
-            )
+            raise ImportError("Could not import google-genai, please install it with `pip install google-genai`.")
 
         self.model = embedding_model
         self.output_dimensionality = kwargs.pop("output_dimensionality", None)

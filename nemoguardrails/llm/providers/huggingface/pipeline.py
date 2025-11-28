@@ -16,30 +16,12 @@
 import asyncio
 from typing import Any, List, Optional
 
-from langchain.callbacks.manager import (
+from langchain_community.llms import HuggingFacePipeline
+from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain.schema.output import GenerationChunk
-
-# Import HuggingFacePipeline with fallbacks for different LangChain versions
-HuggingFacePipeline = None  # type: ignore[assignment]
-
-try:
-    from langchain_community.llms import (
-        HuggingFacePipeline,  # type: ignore[attr-defined,no-redef]
-    )
-except ImportError:
-    # Fallback for older versions of langchain
-    try:
-        from langchain.llms import (
-            HuggingFacePipeline,  # type: ignore[attr-defined,no-redef]
-        )
-    except ImportError:
-        # Create a dummy class if HuggingFacePipeline is not available
-        class HuggingFacePipeline:  # type: ignore[misc,no-redef]
-            def __init__(self, *args, **kwargs):
-                raise ImportError("HuggingFacePipeline is not available")
+from langchain_core.outputs import GenerationChunk
 
 
 class HuggingFacePipelineCompatible(HuggingFacePipeline):
@@ -68,9 +50,7 @@ class HuggingFacePipelineCompatible(HuggingFacePipeline):
         # Streaming for NeMo Guardrails is not supported in sync calls.
         model_kwargs = getattr(self, "model_kwargs", {})
         if model_kwargs and model_kwargs.get("streaming"):
-            raise NotImplementedError(
-                "Streaming mode not supported for HuggingFacePipeline in NeMo Guardrails!"
-            )
+            raise NotImplementedError("Streaming mode not supported for HuggingFacePipeline in NeMo Guardrails!")
 
         llm_result = self._generate(  # type: ignore[attr-defined]
             [prompt],
@@ -103,9 +83,7 @@ class HuggingFacePipelineCompatible(HuggingFacePipeline):
             # Retrieve the streamer object, needs to be set in model_kwargs
             streamer = model_kwargs.get("streamer")
             if not streamer:
-                raise ValueError(
-                    "Cannot stream, please add HuggingFace streamer object to model_kwargs!"
-                )
+                raise ValueError("Cannot stream, please add HuggingFace streamer object to model_kwargs!")
 
             loop = asyncio.get_running_loop()
 

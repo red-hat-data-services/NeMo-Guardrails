@@ -23,14 +23,16 @@ from .span_extractors import (
 from .spans import SpanEvent, SpanLegacy, SpanOpentelemetry
 from .tracer import Tracer, create_log_adapters
 
-___all__ = [
-    SpanExtractor,
-    SpanExtractorV1,
-    SpanExtractorV2,
-    create_span_extractor,
-    Tracer,
-    create_log_adapters,
-    SpanEvent,
-    SpanLegacy,
-    SpanOpentelemetry,
+__all__ = [
+    "InteractionLog",
+    "InteractionOutput",
+    "SpanExtractor",
+    "SpanExtractorV1",
+    "SpanExtractorV2",
+    "create_span_extractor",
+    "Tracer",
+    "create_log_adapters",
+    "SpanEvent",
+    "SpanLegacy",
+    "SpanOpentelemetry",
 ]
