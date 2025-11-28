@@ -4,5 +4,5 @@ wheel==0.45.1
 flit_core==3.10.1
 hatchling==1.26.3
 poetry-core==1.9.0
-poetry==1.8.2
+poetry==2.2.1
 pyyaml==6.0.2
