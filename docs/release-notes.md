@@ -14,6 +14,25 @@ For a complete record of changes in a release, refer to the
 
 ---
 
+(v0-19-0)=
+
+## 0.19.0
+
+(v0-19-0-features)=
+
+### Key Features
+
+- Added support for LangChain 1.x, including the content blocks API for reasoning traces and tool calls.
+
+(v0-19-0-fixed-issues)=
+
+### Fixed Issues
+
+- Fixed TypeError in Colang 2.x chat caused by incorrect type conversion between `State` and `dict`.
+- Fixed async streaming support for the ChatNVIDIA provider patch by adding a new `async_stream_decorator`.
+
+---
+
 (v0-18-0)=
 
 ## 0.18.0
