@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +18,11 @@ import os.path
 import pytest
 
 from nemoguardrails import LLMRails, RailsConfig
-from nemoguardrails.rails.llm.options import GenerationResponse
+from nemoguardrails.rails.llm.options import (
+    GenerationLog,
+    GenerationResponse,
+    GenerationStats,
+)
 from tests.utils import TestChat
 
 
@@ -45,9 +49,7 @@ def test_output_vars_1():
         ],
     )
 
-    res = chat.app.generate(
-        "hi", options={"output_vars": ["user_greeted", "something_else"]}
-    )
+    res = chat.app.generate("hi", options={"output_vars": ["user_greeted", "something_else"]})
     output_data = res.dict().get("output_data", {})
 
     # We check also that a non-existent variable returns None.
@@ -170,14 +172,10 @@ def test_triggered_rails_info_2():
 
 @pytest.mark.skip(reason="Run manually.")
 def test_triggered_abc_bot():
-    config = RailsConfig.from_path(
-        os.path.join(os.path.dirname(__file__), "..", "examples/bots/abc")
-    )
+    config = RailsConfig.from_path(os.path.join(os.path.dirname(__file__), "..", "examples/bots/abc"))
 
     rails = LLMRails(config)
-    res: GenerationResponse = rails.generate(
-        "Hello!", options={"log": {"activated_rails": True}, "output_vars": True}
-    )
+    res: GenerationResponse = rails.generate("Hello!", options={"log": {"activated_rails": True}, "output_vars": True})
 
     print("############################")
     print(json.dumps(res.log.dict(), indent=True))
@@ -310,6 +308,110 @@ def test_only_input_output_validation():
         },
     )
 
-    assert res.response == [
-        {"content": "I'm sorry, I can't respond to that.", "role": "assistant"}
-    ]
+    assert res.response == [{"content": "I'm sorry, I can't respond to that.", "role": "assistant"}]
+
+
+def test_generation_log_print_summary(capsys):
+    """Test printing rais stats with dummy data"""
+
+    stats = GenerationStats(
+        input_rails_duration=1.0,
+        dialog_rails_duration=2.0,
+        generation_rails_duration=3.0,
+        output_rails_duration=4.0,
+        total_duration=10.0,  # Sum of all previous rail durations
+        llm_calls_duration=8.0,  # Less than total duration
+        llm_calls_count=4,  # Input, dialog, generation and output calls
+        llm_calls_total_prompt_tokens=1000,
+        llm_calls_total_completion_tokens=2000,
+        llm_calls_total_tokens=3000,  # Sum of prompt and completion tokens
+    )
+
+    generation_log = GenerationLog(activated_rails=[], stats=stats)
+
+    generation_log.print_summary()
+    capture = capsys.readouterr()
+    capture_lines = capture.out.splitlines()
+
+    # Check the correct times were printed
+    assert capture_lines[1] == "# General stats"
+    assert capture_lines[3] == "- Total time: 10.00s"
+    assert capture_lines[4] == "  - [1.00s][10.0%]: INPUT Rails"
+    assert capture_lines[5] == "  - [2.00s][20.0%]: DIALOG Rails"
+    assert capture_lines[6] == "  - [3.00s][30.0%]: GENERATION Rails"
+    assert capture_lines[7] == "  - [4.00s][40.0%]: OUTPUT Rails"
+    assert (
+        capture_lines[8]
+        == "- 4 LLM calls, 8.00s total duration, 1000 total prompt tokens, 2000 total completion tokens, 3000 total tokens."
+    )
+
+
+@pytest.mark.parametrize(
+    "input_opt,output_opt,dialog_opt,expect_input,expect_output",
+    [
+        (True, True, True, True, True),
+        (True, True, False, True, False),
+        (True, False, True, True, False),
+        (True, False, False, True, False),
+        (False, True, True, False, True),
+        (False, True, False, False, False),
+        (False, False, True, False, False),
+        (False, False, False, False, False),
+    ],
+)
+@pytest.mark.asyncio
+async def test_rails_options_combinations(input_opt, output_opt, dialog_opt, expect_input, expect_output):
+    """
+    Test all combinations of input/output/dialog options.
+    When dialog=False and no bot_message is provided, output rails should skip.
+    """
+    config = RailsConfig.from_content(
+        colang_content="""
+            define user express greeting
+              "hi"
+
+            define flow
+              user express greeting
+              bot express greeting
+
+            define subflow dummy input rail
+              if "block" in $user_message
+                bot refuse to respond
+                stop
+
+            define subflow dummy output rail
+              if "block" in $bot_message
+                bot refuse to respond
+                stop
+        """,
+        yaml_content="""
+            rails:
+              input:
+                flows:
+                  - dummy input rail
+              output:
+                flows:
+                  - dummy output rail
+        """,
+    )
+    chat = TestChat(
+        config,
+        llm_completions=["  express greeting", '  "Hello!"'] if dialog_opt else [],
+    )
+
+    res: GenerationResponse = await chat.app.generate_async(
+        "Hello!",
+        options={
+            "rails": {"input": input_opt, "output": output_opt, "dialog": dialog_opt},
+            "log": {"activated_rails": True},
+        },
+    )
+
+    activated_rails = res.log.activated_rails if res.log else []
+    rail_names = [r.name for r in activated_rails]
+
+    input_rails_ran = any("input" in name.lower() for name in rail_names)
+    output_rails_ran = any("output" in name.lower() for name in rail_names)
+
+    assert input_rails_ran == expect_input, f"Input rails: expected {expect_input}, got {rail_names}"
+    assert output_rails_ran == expect_output, f"Output rails: expected {expect_output}, got {rail_names}"
