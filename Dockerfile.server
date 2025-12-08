@@ -3,17 +3,7 @@ FROM registry.access.redhat.com/ubi9/python-312:latest as build
 USER 0
 WORKDIR /app
 
-ARG PYYAML_VERSION=6.0.3
 ARG GUARDRAILS_PROFILE=opensource
-
-RUN dnf install -y --nodocs --setopt=install_weak_deps=False \
-        gcc \
-        gcc-c++ \
-        git && \
-    pip install --no-cache-dir \
-        pyyaml==${PYYAML_VERSION} && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf /tmp/* /var/tmp/*
 
 COPY requirements.txt pyproject.toml README.md ./
 COPY nemoguardrails/ ./nemoguardrails/
@@ -29,24 +19,21 @@ ENV HF_HOME=/app/.cache/huggingface \
     NLTK_DATA=/app/.cache/nltk_data \
     FASTEMBED_CACHE_PATH=/app/.cache/fastembed
 
-# Create virtual environment and install dependencies
-RUN python3 -m venv /app/.venv && \
-    /app/.venv/bin/pip install --no-cache-dir \
-        --extra-index-url https://download.pytorch.org/whl/cpu \
-        -r requirements.txt && \
+RUN . /cachi2/cachi2.env && \
+    python3 -m venv /app/.venv && \
+    /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
     rm -rf /root/.cache/pip /tmp/* /var/tmp/*
 
-# Pre-download required models and cleanup
+RUN . /cachi2/cachi2.env && \
+    /app/.venv/bin/pip install --no-cache-dir /cachi2/output/deps/generic/en_core_web_lg-3.7.1-py3-none-any.whl
+
 RUN set -ex && \
     GUARDRAILS_PROFILE=$GUARDRAILS_PROFILE /app/.venv/bin/python ./scripts/pre_download_required_models.py && \
     find /app/.cache -type f -name "*.pyc" -delete && \
     find /app/.cache -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
     find /app/.cache -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true && \
-    rm -rf /app/.cache/huggingface/xet /root/.cache /tmp/* /var/tmp/* && \
-    dnf remove -y gcc gcc-c++ git && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf
+    rm -rf /app/.cache/huggingface/xet /root/.cache /tmp/* /var/tmp/*
 
 FROM registry.access.redhat.com/ubi9/python-312:latest as runtime
 
