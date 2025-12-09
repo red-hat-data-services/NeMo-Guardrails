@@ -12,7 +12,6 @@ COPY examples/bots/ ./examples/bots/
 
 RUN chmod +x ./scripts/entrypoint.sh
 
-# Install PyYAML for filter_guardrails.py script
 RUN . /cachi2/cachi2.env && \
     python3 -m pip install --no-cache-dir pyyaml
 
