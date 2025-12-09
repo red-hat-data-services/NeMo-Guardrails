@@ -11,6 +11,11 @@ COPY scripts/ ./scripts/
 COPY examples/bots/ ./examples/bots/
 
 RUN chmod +x ./scripts/entrypoint.sh
+
+# Install PyYAML for filter_guardrails.py script
+RUN . /cachi2/cachi2.env && \
+    python3 -m pip install --no-cache-dir pyyaml
+
 RUN python3 ./scripts/filter_guardrails.py ./scripts/provider-list.yaml $GUARDRAILS_PROFILE
 
 ENV HF_HOME=/app/.cache/huggingface \
