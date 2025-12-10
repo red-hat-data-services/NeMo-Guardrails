@@ -19,7 +19,7 @@ from datetime import date
 
 from toml import load
 
-project = "NVIDIA NeMo Guardrails"
+project = "NVIDIA NeMo Guardrails Toolkit Developer Guide"
 this_year = date.today().year
 copyright = f"2023-{this_year}, NVIDIA Corporation"
 author = "NVIDIA Corporation"
@@ -33,6 +33,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_copybutton",
     "sphinx_reredirects",
+    "sphinx_design",
+    "sphinxcontrib.mermaid",
 ]
 
 redirects = {
@@ -51,6 +53,7 @@ exclude_patterns = [
 myst_linkify_fuzzy_links = False
 myst_heading_anchors = 4
 myst_enable_extensions = [
+    "colon_fence",
     "deflist",
     "dollarmath",
     "fieldlist",
