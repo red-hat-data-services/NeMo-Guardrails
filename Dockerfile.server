@@ -32,6 +32,9 @@ RUN . /cachi2/cachi2.env && \
 RUN . /cachi2/cachi2.env && \
     /app/.venv/bin/pip install --no-cache-dir /cachi2/output/deps/generic/en_core_web_lg-3.7.1-py3-none-any.whl
 
+RUN . /cachi2/cachi2.env && \
+    /app/.venv/bin/pip install --no-cache-dir /cachi2/output/deps/generic/torch-2.9.0+cpu-cp312-cp312-linux_x86_64.whl
+
 RUN set -ex && \
     GUARDRAILS_PROFILE=$GUARDRAILS_PROFILE /app/.venv/bin/python ./scripts/pre_download_required_models.py && \
     find /app/.cache -type f -name "*.pyc" -delete && \

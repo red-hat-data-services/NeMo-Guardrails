@@ -398,11 +398,6 @@ tokenizers==0.22.1
     # via
     #   fastembed
     #   transformers
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.9.0+cpu
-    # via
-    #   nemoguardrails (pyproject.toml)
-    #   sentence-transformers
 tqdm==4.67.1
     # via
     #   fastembed

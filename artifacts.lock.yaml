@@ -5,3 +5,6 @@ artifacts:
   - download_url: "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1-py3-none-any.whl"
     checksum: "sha256:ab70aeb6172cde82508f7739f35ebc9918a3d07debeed637403c8f794ba3d3dc"
     filename: "en_core_web_lg-3.7.1-py3-none-any.whl"
+  - download_url: "https://download.pytorch.org/whl/cpu/torch-2.9.0%2Bcpu-cp312-cp312-linux_x86_64.whl"
+    checksum: "sha256:da30c1fcdcad38aad69c51f9b66fb7d99c29e4ca9075b709108f6a5cffbbfdc4"
+    filename: "torch-2.9.0+cpu-cp312-cp312-linux_x86_64.whl"
