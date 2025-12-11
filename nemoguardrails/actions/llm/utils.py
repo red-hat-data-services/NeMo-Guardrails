@@ -15,7 +15,7 @@
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Dict, List, NoReturn, Optional, Sequence, Union
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
@@ -30,23 +30,25 @@ from nemoguardrails.context import (
     reasoning_trace_var,
     tool_calls_var,
 )
+from nemoguardrails.exceptions import LLMCallException
 from nemoguardrails.integrations.langchain.message_utils import dicts_to_messages
 from nemoguardrails.logging.callbacks import logging_callbacks
 from nemoguardrails.logging.explain import LLMCallInfo
 
 logger = logging.getLogger(__name__)
 
-
-class LLMCallException(Exception):
-    """A wrapper around the LLM call invocation exception.
-
-    This is used to propagate the exception out of the `generate_async` call (the default behavior is to
-    catch it and return an "Internal server error." message.
-    """
-
-    def __init__(self, inner_exception: Any):
-        super().__init__(f"LLM Call Exception: {str(inner_exception)}")
-        self.inner_exception = inner_exception
+# Since different providers have different attributes for the base URL, we'll use this list
+# to attempt to extract the base URL from a `BaseLanguageModel` instance.
+BASE_URL_ATTRIBUTES = [
+    "base_url",
+    "endpoint_url",
+    "server_url",
+    "azure_endpoint",
+    "openai_api_base",
+    "api_base",
+    "api_host",
+    "endpoint",
+]
 
 
 def _infer_provider_from_module(llm: BaseLanguageModel) -> Optional[str]:
@@ -160,7 +162,7 @@ async def llm_call(
         The generated text response
     """
     if llm is None:
-        raise LLMCallException("No LLM provided to llm_call()")
+        raise LLMCallException(ValueError("No LLM provided to llm_call()"))
     _setup_llm_call_info(llm, model_name, model_provider)
     all_callbacks = _prepare_callbacks(custom_callback_handlers)
 
@@ -200,6 +202,58 @@ def _prepare_callbacks(
     return logging_callbacks
 
 
+def _raise_llm_call_exception(
+    exception: Exception,
+    llm: Union[BaseLanguageModel, Runnable],
+) -> NoReturn:
+    """Raise an LLMCallException with enriched context about the failed invocation.
+
+    Args:
+        exception: The original exception that occurred
+        llm: The LLM instance that was being invoked
+
+    Raises:
+        LLMCallException with context message including model name and endpoint
+    """
+    # Extract model name from context
+    llm_call_info = llm_call_info_var.get()
+    model_name = (
+        llm_call_info.llm_model_name
+        if llm_call_info
+        else _infer_model_name(llm)
+        if isinstance(llm, BaseLanguageModel)
+        else ""
+    )
+
+    # Extract endpoint URL from the LLM instance
+    endpoint_url = None
+    for attr in BASE_URL_ATTRIBUTES:
+        if hasattr(llm, attr):
+            value = getattr(llm, attr, None)
+            if value:
+                endpoint_url = str(value)
+                break
+
+    # If we didn't find endpoint URL, check the nested client object.
+    if not endpoint_url and hasattr(llm, "client"):
+        client = getattr(llm, "client", None)
+        if client and hasattr(client, "base_url"):
+            endpoint_url = str(client.base_url)
+
+    # Build context message with model and endpoint info
+    context_parts = []
+    if model_name:
+        context_parts.append(f"model={model_name}")
+    if endpoint_url:
+        context_parts.append(f"endpoint={endpoint_url}")
+
+    if context_parts:
+        detail = f"Error invoking LLM ({', '.join(context_parts)})"
+        raise LLMCallException(exception, detail=detail) from exception
+    else:
+        raise LLMCallException(exception) from exception
+
+
 async def _invoke_with_string_prompt(
     llm: Union[BaseLanguageModel, Runnable],
     prompt: str,
@@ -210,7 +264,7 @@ async def _invoke_with_string_prompt(
     try:
         return await llm.ainvoke(prompt, config=RunnableConfig(callbacks=callbacks), stop=stop)
     except Exception as e:
-        raise LLMCallException(e)
+        _raise_llm_call_exception(e, llm)
 
 
 async def _invoke_with_message_list(
@@ -225,7 +279,7 @@ async def _invoke_with_message_list(
     try:
         return await llm.ainvoke(messages, config=RunnableConfig(callbacks=callbacks), stop=stop)
     except Exception as e:
-        raise LLMCallException(e)
+        _raise_llm_call_exception(e, llm)
 
 
 def _convert_messages_to_langchain_format(prompt: List[dict]) -> List:
