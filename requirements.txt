@@ -326,7 +326,7 @@ requests-file==2.1.0
     # via tldextract
 requests-toolbelt==1.0.0
     # via langsmith
-rich==14.1.0
+rich==14.2.0
     # via
     #   nemoguardrails (pyproject.toml)
     #   typer
