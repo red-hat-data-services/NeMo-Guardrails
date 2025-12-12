@@ -460,7 +460,7 @@ wrapt==1.17.3
     # via smart-open
 yara-python==4.5.4
     # via nemoguardrails (pyproject.toml)
-yarl==1.20.1
+yarl==1.22.0
     # via aiohttp
 zipp==3.23.0
     # via importlib-metadata
