@@ -88,7 +88,7 @@ filetype==1.2.0
     # via langchain-nvidia-ai-endpoints
 flatbuffers==25.2.10
     # via onnxruntime
-frozenlist==1.7.0
+frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
