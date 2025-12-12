@@ -322,7 +322,7 @@ requests==2.32.5
     #   tldextract
     #   transformers
     #   weasel
-requests-file==2.1.0
+requests-file==3.0.1
     # via tldextract
 requests-toolbelt==1.0.0
     # via langsmith
