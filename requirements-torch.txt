@@ -16,7 +16,7 @@ markupsafe==2.1.5
     # via jinja2
 mpmath==1.3.0
     # via sympy
-networkx==3.6.1813058
+networkx==3.6.1
     # via torch
 sympy==1.14.0
     # via torch
