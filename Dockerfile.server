@@ -30,7 +30,7 @@ RUN . /cachi2/cachi2.env && \
     rm -rf /root/.cache/pip /tmp/* /var/tmp/*
 
 RUN . /cachi2/cachi2.env && \
-    /app/.venv/bin/pip install --no-cache-dir /cachi2/output/deps/generic/en_core_web_lg-3.7.1-py3-none-any.whl
+    /app/.venv/bin/pip install --no-cache-dir /cachi2/output/deps/generic/en_core_web_lg-3.8.0-py3-none-any.whl
 
 RUN . /cachi2/cachi2.env && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements-torch.txt
