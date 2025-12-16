@@ -227,6 +227,8 @@ spec:
         - linux/arm64
         - linux/ppc64le
         - linux/s390x
+      - name: IMAGE_APPEND_PLATFORM
+        value: "true"
       runAfter:
       - prefetch-dependencies
       taskRef:
