@@ -67,3 +67,13 @@ ENV HF_HOME=/app/.cache/huggingface \
 
 EXPOSE 8000
 ENTRYPOINT ["./scripts/entrypoint.sh"]
+
+LABEL com.redhat.component="odh-nemo-guardrails" \
+      name="rhoai/odh-nemo-guardrails-rhel9" \
+      description="NeMo Guardrails is an open-source toolkit for easily adding programmable guardrails to LLM-based conversational systems" \
+      summary="odh-nemo-guardrails" \
+      maintainer="['managed-open-data-hub@redhat.com']" \
+      io.openshift.expose-services="8000:http" \
+      io.k8s.display-name="odh-nemo-guardrails" \
+      io.k8s.description="NeMo Guardrails toolkit for controlling and securing LLM-based conversational systems" \
+      com.redhat.license_terms="https://www.redhat.com/licenses/Red_Hat_Standard_EULA_20191108.pdf"
