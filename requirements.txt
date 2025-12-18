@@ -194,7 +194,7 @@ multidict==6.6.4
     # via
     #   aiohttp
     #   yarl
-murmurhash==1.0.13
+murmurhash==1.0.15
     # via
     #   preshed
     #   spacy
