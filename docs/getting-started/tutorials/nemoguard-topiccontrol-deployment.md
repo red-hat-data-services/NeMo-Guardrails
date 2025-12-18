@@ -1,6 +1,14 @@
 ---
-title: Topic Control
-description: Deploy NeMo Topic Control to restrict conversations to allowed topics.
+title:
+  page: "Deploy NeMo Topic Control"
+  nav: "Topic Control"
+description: "Deploy NeMo Topic Control NIM to restrict conversations to allowed topics."
+topics: ["AI Safety", "Content Moderation"]
+tags: ["Topic Control", "NIM", "Input Rails", "LoRA", "Docker"]
+content:
+  type: "Tutorial"
+  difficulty: "Intermediate"
+  audience: ["Developer", "AI Engineer"]
 ---
 
 # Topic Control with NeMo Topic Control
@@ -105,6 +113,6 @@ docker run -it --name=$MODEL_NAME \
 
 For more details on NeMo Topic Control, check out these resources:
 
-- NeMo Guardrails Library for [NVIDIA NemoGuard models](../guardrails-library.md#nvidia-models)
+- [NVIDIA NemoGuard models](../guardrails-library.md#nvidia-models)
 - NeMo Topic Control topic safety example [configuration and prompts](https://github.com/NVIDIA/NeMo-Guardrails/tree/develop/examples/configs/topic_safety)
 - [Paper at EMNLP 2024](https://arxiv.org/abs/2404.03820)

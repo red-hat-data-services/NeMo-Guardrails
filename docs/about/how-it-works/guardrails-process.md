@@ -1,3 +1,16 @@
+---
+title:
+  page: "Guardrails Sequence Diagrams"
+  nav: "Sequence Diagrams"
+description: "View sequence diagrams showing input, retrieval, dialog, execution, and output stages."
+topics: ["AI"]
+tags: ["Guardrails", "Architecture", "Sequence Diagram"]
+content:
+  type: "Concept"
+  difficulty: "Intermediate"
+  audience: ["Developer", "Machine Learning Engineer"]
+---
+
 # Guardrails Sequence Diagrams
 
 This guide provides an overview of the process of invoking guardrails.

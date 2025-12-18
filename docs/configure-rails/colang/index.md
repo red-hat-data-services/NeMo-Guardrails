@@ -1,6 +1,14 @@
 ---
-title: Colang Guide
-description: Learn Colang, the event-driven language for defining guardrails flows, user messages, and bot responses.
+title:
+  page: "Colang Guide"
+  nav: "Colang"
+description: "Learn Colang, the event-driven language for defining guardrails flows and bot behavior."
+topics: ["Configuration", "AI Safety"]
+tags: ["Colang", "Flows", "Events", "DSL", "Language"]
+content:
+  type: "Overview"
+  difficulty: "Intermediate"
+  audience: ["Developer", "AI Engineer"]
 ---
 
 # Colang Guide
@@ -8,10 +16,10 @@ description: Learn Colang, the event-driven language for defining guardrails flo
 Colang is an *event-driven interaction modeling language* that is interpreted by a Python runtime.
 This section describes how to use Colang to define guardrails flows in `.co` files.
 
-The initial releases of NeMo Guardrails (versions 0.1 through 0.7) use Colang 1.0.
-Beginning with version 0.8, NeMo Guardrails introduces support for Colang 2.0, while maintaining Colang 1.0 as the default until Colang completes its beta phase.
+The initial releases of the NeMo Guardrails library (versions 0.1 through 0.7) use Colang 1.0.
+Beginning with version 0.8, the NeMo Guardrails library introduces support for Colang 2.0, while maintaining Colang 1.0 as the default until Colang completes its beta phase.
 
-| NeMo Guardrails Version | Colang Version |
+| NeMo Guardrails Library Version | Colang Version |
 |-------------------------|----------------|
 | 0.1 - 0.7 | 1.0 |
 | 0.8 | 2.0-alpha |
@@ -49,14 +57,14 @@ The following sections provide detailed documentation for using Colang:
 :link: colang-2/index
 :link-type: doc
 
-Reference for using Colang 2.0 in guardrails.
+whats-changed getting-started/index language-reference/index migration-guide
 :::
 
 :::{grid-item-card} Colang 1.0 Guide
 :link: colang-1/index
 :link-type: doc
 
-The original Colang syntax for defining user messages, bot messages, and dialog flows.
+Reference and tutorials for Colang 1.0 syntax for defining dialog flows and guardrails.
 :::
 
 :::{grid-item-card} Migrating from Colang 1 to Colang 2

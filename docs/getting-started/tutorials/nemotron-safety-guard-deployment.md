@@ -1,6 +1,14 @@
 ---
-title: Content Safety - Text
-description: Deploy NeMo Content Safety to detect harmful content in text inputs and outputs.
+title:
+  page: "Deploy NeMo Content Safety for Text"
+  nav: "Content Safety"
+description: "Deploy Nemotron Safety Guard to detect harmful content in multilingual text inputs and outputs."
+topics: ["AI Safety", "Content Safety"]
+tags: ["Content Safety", "NIM", "Multilingual", "Input Rails", "Output Rails", "Docker"]
+content:
+  type: "Tutorial"
+  difficulty: "Intermediate"
+  audience: ["Developer", "AI Engineer"]
 ---
 
 <!--

@@ -1,6 +1,14 @@
 ---
-title: Overview
-description: Learn about the NeMo Guardrails Library and its capabilities.
+title:
+  page: "Overview of the NeMo Guardrails Library"
+  nav: "Overview"
+description: "Add programmable guardrails to LLM applications with this open-source Python library."
+topics: ["AI"]
+tags: ["Python", "LLM", "Guardrails", "Safety", "Content Moderation"]
+content:
+  type: "Concept"
+  difficulty: "Beginner"
+  audience: ["Developer", "Machine Learning Engineer"]
 ---
 
 <!--
@@ -10,7 +18,7 @@ description: Learn about the NeMo Guardrails Library and its capabilities.
 
 # Overview of the NeMo Guardrails Library
 
-The NVIDIA NeMo Guardrails Library is an open-source Python package for adding programmable guardrails to LLM-based applications. It intercepts inputs and outputs, applies configurable safety checks, and blocks or modifies content based on defined policies.
+The NVIDIA NeMo Guardrails library is an open-source Python package for adding programmable guardrails to LLM-based applications. It intercepts inputs and outputs, applies configurable safety checks, and blocks or modifies content based on defined policies.
 
 ```{mermaid}
 %%{init: {'theme': 'neutral', 'themeVariables': { 'background': 'transparent' }}}%%
@@ -46,7 +54,7 @@ end
 
 ## What You Can Do with the NeMo Guardrails Library
 
-The following are the top use cases of the NeMo Guardrails Library that you can apply to protect your LLM applications.
+The following are the top use cases of the NeMo Guardrails library that you can apply to protect your LLM applications.
 
 ::::{grid} 1 1 2 2
 :gutter: 3
@@ -102,7 +110,7 @@ Validate inputs and outputs when the LLM calls external tools or APIs. Execution
 
 ## Tools
 
-The following are the tools you can use to interact with the NeMo Guardrails Library.
+The following are the tools you can use to interact with the NeMo Guardrails library.
 
 ### Python SDK
 
@@ -131,7 +139,7 @@ The server exposes an HTTP API compatible with OpenAI's `/v1/chat/completions` e
 
 ## Library vs Microservice
 
-This documentation covers the open-source NeMo Guardrails Library. The NeMo Guardrails Microservice is a separate product that packages the same core functionality for Kubernetes deployment.
+This documentation covers the open-source NeMo Guardrails library. The NeMo Guardrails Microservice is a separate product that packages the same core functionality for Kubernetes deployment.
 
 |                  | Library                          | Microservice                     |
 |------------------|----------------------------------|----------------------------------|

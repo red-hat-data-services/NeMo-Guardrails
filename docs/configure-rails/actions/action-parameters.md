@@ -5,7 +5,7 @@ description: Reference for special parameters like context, llm, and config auto
 
 # Action Parameters
 
-This section describes the special parameters automatically provided to actions by the NeMo Guardrails Library.
+This section describes the special parameters automatically provided to actions by the NeMo Guardrails library.
 
 ## Special Parameters
 

@@ -1,6 +1,19 @@
+---
+title:
+  page: "Architecture Guide"
+  nav: "Architecture"
+description: "Explore the event-driven runtime, canonical messages, and server design."
+topics: ["AI"]
+tags: ["Guardrails", "Architecture", "Colang", "LangChain"]
+content:
+  type: "Concept"
+  difficulty: "Advanced"
+  audience: ["Developer", "Machine Learning Engineer"]
+---
+
 # Architecture Guide
 
-This document provides more details on the architecture and the approach that the NeMo Guardrails Library takes for implementing guardrails.
+This document provides more details on the architecture and the approach that the NeMo Guardrails library takes for implementing guardrails.
 
 ![Overall Architecture](overall-architecture.png)
 

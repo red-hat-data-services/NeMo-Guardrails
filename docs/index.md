@@ -18,28 +18,28 @@ Learn about the library and its capabilities in the following sections.
 :link: about/overview
 :link-type: doc
 
-Learn about the NeMo Guardrails library and its capabilities.
+Add programmable guardrails to LLM applications with this open-source Python library.
 :::
 
 :::{grid-item-card} Use Cases
 :link: about/use-cases
 :link-type: doc
 
-Browse the different use cases of the NeMo Guardrails library.
+Implement content safety, jailbreak protection, topic control, PII detection, and custom rails.
 :::
 
 :::{grid-item-card} How It Works
 :link: about/how-it-works/index
 :link-type: doc
 
-Learn how the NeMo Guardrails library works.
+Learn the sequence diagrams and architecture for building guardrails.
 :::
 
-:::{grid-item-card} Supported LLMs and Providers
+:::{grid-item-card} Supported LLMs
 :link: about/supported-llms
 :link-type: doc
 
-Browse the LLMs and their providers supported by the library.
+Connect to NVIDIA NIM, OpenAI, Azure, Anthropic, HuggingFace, and LangChain providers.
 :::
 
 ::::
@@ -55,14 +55,14 @@ Follow these steps to start using the NeMo Guardrails library.
 :link: getting-started/installation-guide
 :link-type: doc
 
-Install the library with pip and set up your environment.
+Install NeMo Guardrails with pip, configure your environment, and verify the installation.
 :::
 
 :::{grid-item-card} Tutorials
 :link: getting-started/tutorials/index
 :link-type: doc
 
-Follow hands-on tutorials to build your first Guardrails configuration.
+Follow hands-on tutorials to deploy content safety, topic control, and jailbreak detection.
 :::
 ::::
 
@@ -79,42 +79,42 @@ Once you've completed the get-started tutorials, explore the following areas to 
 :link: configure-rails/overview
 :link-type: doc
 
-Learn to write config.yml, Colang flows, and custom actions.
+Learn to write config.yml, Colang flows, and custom actions for guardrails.
 :::
 
 :::{grid-item-card} Run Rails
 :link: run-rails/index
 :link-type: doc
 
-Use the Python SDK and understand core classes like RailsConfig and LLMRails.
+Use RailsConfig and LLMRails classes to load configurations and generate guarded responses.
 :::
 
 :::{grid-item-card} Evaluate
 :link: evaluation/README
 :link-type: doc
 
-Evaluate the performance of the rails.
+Measure accuracy and performance of dialog, fact-checking, moderation, and hallucination rails.
 :::
 
-:::{grid-item-card} Observability
+:::{grid-item-card} Logging
 :link: observability/logging/index
 :link-type: doc
 
-Monitor and troubleshoot your guardrails applications.
+Debug guardrails with verbose mode, explain method, and generation log options.
 :::
 
 :::{grid-item-card} Deploy
 :link: deployment/index
 :link-type: doc
 
-Deploy your guardrails using the library's local server, Docker, or as a production microservice.
+Deploy guardrails using the local server, Docker containers, or production microservices.
 :::
 
-:::{grid-item-card} Integrate
+:::{grid-item-card} LangChain
 :link: integration/langchain/index
 :link-type: doc
 
-Connect with LangChain, LangGraph, and other frameworks.
+Integrate NeMo Guardrails with LangChain chains, runnables, and LangGraph workflows.
 :::
 
 ::::

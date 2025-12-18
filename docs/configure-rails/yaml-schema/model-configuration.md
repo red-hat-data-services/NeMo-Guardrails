@@ -1,6 +1,14 @@
 ---
-title: Model Configuration
-description: Configure LLM providers, embedding models, and task-specific models in the config.yml file.
+title:
+  page: "Model Configuration for NeMo Guardrails"
+  nav: "Models"
+description: "Configure LLM engines, embedding models, and task-specific models in config.yml."
+topics: ["Configuration", "AI Safety"]
+tags: ["Models", "LLM", "Embeddings", "OpenAI", "NIM", "YAML"]
+content:
+  type: "Reference"
+  difficulty: "Intermediate"
+  audience: ["Developer", "AI Engineer"]
 ---
 
 # Model Configuration
@@ -9,7 +17,7 @@ This section describes how to configure LLM models and embedding models in the `
 
 ## The `models` Key
 
-The `models` key defines the LLM providers and models used by the NeMo Guardrails Library.
+The `models` key defines the LLM providers and models used by the NeMo Guardrails library.
 
 ```yaml
 models:
@@ -88,7 +96,7 @@ models:
 
 ## NVIDIA NIM Configuration
 
-The NeMo Guardrails Library provides seamless integration with NVIDIA NIM microservices:
+The NeMo Guardrails library provides seamless integration with NVIDIA NIM microservices:
 
 ```yaml
 models:

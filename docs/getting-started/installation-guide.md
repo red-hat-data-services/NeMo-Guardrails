@@ -1,11 +1,19 @@
 ---
-title: Install
-description: Install the NeMo Guardrails Library with pip and set up your environment.
+title:
+  page: "Install the NeMo Guardrails Library"
+  nav: "Install"
+description: "Install NeMo Guardrails with pip, configure your environment, and verify the installation."
+topics: ["Get Started", "AI Safety"]
+tags: ["Installation", "Python", "pip", "Docker", "Setup"]
+content:
+  type: "Get Started"
+  difficulty: "Beginner"
+  audience: ["Developer", "AI Engineer"]gi
 ---
 
-# Installation Guide
+# Install the NeMo Guardrails Library
 
-This guide walks you through the following steps to install the NeMo Guardrails Library.
+This guide walks you through the following steps to install the NeMo Guardrails library.
 
 1. Check the requirements.
 2. Set up a fresh virtual environment.
@@ -16,7 +24,7 @@ This guide walks you through the following steps to install the NeMo Guardrails 
 
 ## Requirements
 
-Review the following requirements to install the NeMo Guardrails Library.
+Review the following requirements to install the NeMo Guardrails library.
 
 | Requirement Type     | Details                                                                                                                                      |
 |----------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
@@ -25,7 +33,7 @@ Review the following requirements to install the NeMo Guardrails Library.
 
 ### Additional Dependencies
 
-The NeMo Guardrails Library uses [annoy](https://github.com/spotify/annoy), which is a C++ library with Python bindings. To install it, you need to have a valid C++ runtime on your computer.
+The NeMo Guardrails library uses [annoy](https://github.com/spotify/annoy), which is a C++ library with Python bindings. To install it, you need to have a valid C++ runtime on your computer.
 Most systems already have installed a C++ runtime. If the **annoy** installation fails due to a missing C++ runtime, you can install a C++ runtime as follows:
 
 #### Installing a C++ runtime on Linux, Mac, or Unix-based OS
@@ -40,7 +48,7 @@ Install the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visua
 
 ## Setting up a virtual environment
 
-To experiment with the NeMo Guardrails Library from scratch, use a fresh virtual environment. Otherwise, you can skip to the following section.
+To experiment with the NeMo Guardrails library from scratch, use a fresh virtual environment. Otherwise, you can skip to the following section.
 
 ### Setting up a virtual environment on Linux, Mac, or Unix-based OS
 
@@ -74,7 +82,7 @@ Use the `mkvirtualenv` *name* command to activate a new virtual environment call
 
 ## Install the NeMo Guardrails Library
 
-Install the NeMo Guardrails Library using **pip**:
+Install the NeMo Guardrails library using **pip**:
 
  ```sh
  pip install nemoguardrails
@@ -82,7 +90,7 @@ Install the NeMo Guardrails Library using **pip**:
 
 ## Installing from source code
 
-The NeMo Guardrails Library is under active development and the main branch always contains the latest development version. To install from source:
+The NeMo Guardrails library is under active development and the main branch always contains the latest development version. To install from source:
 
 1. Clone the repository:
 
@@ -103,8 +111,8 @@ The `nemoguardrails` package also defines the following extra dependencies:
 
 - `dev`: packages required by some extra Guardrails features for developers, such as the **autoreload** feature.
 - `eval`: packages used for the Guardrails [evaluation tools](../../nemoguardrails/evaluate/README.md).
-- `openai`: installs the latest `openai` package supported by the NeMo Guardrails Library.
-- `sdd`: packages used by the [sensitive data detector](../user-guides/guardrails-library.md#sensitive-data-detection) integrated in the NeMo Guardrails Library.
+- `openai`: installs the latest `openai` package supported by the NeMo Guardrails library.
+- `sdd`: packages used by the [sensitive data detector](../user-guides/guardrails-library.md#sensitive-data-detection) integrated in the NeMo Guardrails library.
 - `all`: installs all extra packages.
 
 To keep the footprint of `nemoguardrails` as small as possible, these are not installed by default. To install any of the extra dependencies you can use **pip** as well. For example, to install the `dev` extra dependencies, run the following command:
@@ -133,12 +141,12 @@ as shown in the following example, where *YOUR_KEY* is your OpenAI key.
  export OPENAI_API_KEY=YOUR_KEY
 ```
 
-Some NeMo Guardrails Library LLMs and features have specific installation requirements, including a more complex set of steps. For example, [AlignScore](../user-guides/advanced/align_score_deployment.md) fact-checking using [Llama-2](../../examples/configs/llm/hf_pipeline_llama2/README.md) requires two additional packages.
+Some NeMo Guardrails library LLMs and features have specific installation requirements, including a more complex set of steps. For example, [AlignScore](../user-guides/advanced/align_score_deployment.md) fact-checking using [Llama-2](../../examples/configs/llm/hf_pipeline_llama2/README.md) requires two additional packages.
 For each feature or LLM example, check the readme file associated with it.
 
 ## Using Docker
 
-The NeMo Guardrails Library can also be used through Docker. For details on how to build and use the Docker image see [NeMo Guardrails with Docker](../user-guides/advanced/using-docker.md).
+The NeMo Guardrails library can also be used through Docker. For details on how to build and use the Docker image see [NeMo Guardrails with Docker](../user-guides/advanced/using-docker.md).
 
 ## What's next?
 

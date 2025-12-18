@@ -1,6 +1,14 @@
 ---
-title: Prompt Configuration
-description: Customize prompts for LLM tasks including self-check input/output, fact checking, and intent generation.
+title:
+  page: "Prompt Configuration for NeMo Guardrails"
+  nav: "Prompts"
+description: "Customize prompts for self-check, fact-checking, and intent generation tasks."
+topics: ["Configuration", "AI Safety"]
+tags: ["Prompts", "Jinja2", "Templates", "YAML", "Customization"]
+content:
+  type: "Reference"
+  difficulty: "Intermediate"
+  audience: ["Developer", "AI Engineer"]
 ---
 
 # Prompt Configuration

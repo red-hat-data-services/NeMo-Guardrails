@@ -1,11 +1,11 @@
 ---
 title: Built-in Actions
-description: Reference for default actions included in the NeMo Guardrails Library for common operations.
+description: Reference for default actions included in the NeMo Guardrails library for common operations.
 ---
 
 # Built-in Actions
 
-This section describes the default actions included in the NeMo Guardrails Library.
+This section describes the default actions included in the NeMo Guardrails library.
 
 ## Core Actions
 

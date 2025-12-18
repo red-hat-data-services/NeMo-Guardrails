@@ -1,6 +1,14 @@
 ---
-title: Jailbreak Detection
-description: Deploy NeMo Jailbreak Detect to block adversarial prompts.
+title:
+  page: "Deploy NeMo Jailbreak Detection"
+  nav: "Jailbreak Detection"
+description: "Deploy NeMo Jailbreak Detect NIM to block adversarial prompts and jailbreak attempts."
+topics: ["AI Safety", "Security"]
+tags: ["Jailbreak", "NIM", "Security", "Input Rails", "Docker"]
+content:
+  type: "Tutorial"
+  difficulty: "Intermediate"
+  audience: ["Developer", "AI Engineer", "Security Engineer"]
 ---
 
 # Jailbreak Detection with NeMo Jailbreak Detect

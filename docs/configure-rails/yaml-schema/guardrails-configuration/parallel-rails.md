@@ -1,3 +1,8 @@
+---
+title: Parallel Execution of Rails
+description: Configure input and output rails to run in parallel for improved latency and throughput.
+---
+
 # Parallel Execution of Input and Output Rails
 
 You can configure input and output rails to run in parallel. This can improve latency and throughput.
