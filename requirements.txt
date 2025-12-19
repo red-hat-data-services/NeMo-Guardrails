@@ -330,7 +330,7 @@ rich==14.1.0
     # via
     #   nemoguardrails (pyproject.toml)
     #   typer
-safetensors==0.6.2
+safetensors==0.7.0
     # via transformers
 scikit-learn==1.7.2
     # via sentence-transformers
