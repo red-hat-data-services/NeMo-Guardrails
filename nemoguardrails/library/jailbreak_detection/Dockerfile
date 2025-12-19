@@ -1,5 +1,5 @@
 # Use python:3.10 as the base image
-FROM python:3.10-slim
+FROM python:3.14-slim
 
 # Install git and wget
 RUN apt-get update && apt-get install -y git gcc g++ python3-dev wget && apt-get clean
