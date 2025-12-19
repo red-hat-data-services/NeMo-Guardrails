@@ -332,7 +332,7 @@ rich==14.1.0
     #   typer
 safetensors==0.6.2
     # via transformers
-scikit-learn==1.7.2
+scikit-learn==1.8.0
     # via sentence-transformers
 scipy==1.16.3
     # via
