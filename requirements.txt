@@ -203,7 +203,7 @@ mypy-extensions==1.1.0
     # via typing-inspect
 nest-asyncio==1.6.0
     # via nemoguardrails (pyproject.toml)
-networkx==3.5
+networkx==3.6.1
     # via torch
 nltk==3.9.2
     # via nemoguardrails (pyproject.toml)
