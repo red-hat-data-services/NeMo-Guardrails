@@ -86,7 +86,7 @@ filelock==3.19.1
     #   transformers
 filetype==1.2.0
     # via langchain-nvidia-ai-endpoints
-flatbuffers==25.2.10
+flatbuffers==25.12.19
     # via onnxruntime
 frozenlist==1.7.0
     # via
