@@ -5,3 +5,6 @@ artifacts:
   - download_url: "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl"
     checksum: "sha256:293e9547a655b25499198ab15a525b05b9407a75f10255e405e8c3854329ab63"
     filename: "en_core_web_lg-3.8.0-py3-none-any.whl"
+  - download_url: "https://files.pythonhosted.org/packages/07/38/e321b0e05d8cc068a594279fb7c097efb1df66231c295d482d7ad51b6473/annoy-1.17.3.tar.gz"
+    checksum: "sha256:9cbfebefe0a5f843eba29c6be4c84d601f4f41ad4ded0486f1b88c3b07739c15"
+    filename: "annoy-1.17.3.tar.gz"
