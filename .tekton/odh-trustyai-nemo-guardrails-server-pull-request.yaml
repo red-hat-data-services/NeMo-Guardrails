@@ -54,11 +54,12 @@ spec:
           "requirements_files": ["requirements.txt", "requirements-torch.txt"], 
           "binary": {
             "os": "linux"
+          }
         },
         {
           "type": "pip", 
           "path": ".konflux/", 
-          "requirements_files": ["requirements-extra.txt"], 
+          "requirements_files": ["requirements-extra.txt"]
         }, 
         {"type": "generic", "path": "."}
       ]
