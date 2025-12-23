@@ -12,8 +12,7 @@ COPY examples/bots/ ./examples/bots/
 
 RUN chmod +x ./scripts/entrypoint.sh
 
-RUN . /cachi2/cachi2.env && \
-    python3 -m pip install --no-cache-dir pyyaml
+RUN python3 -m pip install --no-cache-dir pyyaml
 
 RUN python3 ./scripts/filter_guardrails.py ./scripts/provider-list.yaml $GUARDRAILS_PROFILE
 
@@ -23,17 +22,14 @@ ENV HF_HOME=/app/.cache/huggingface \
     NLTK_DATA=/app/.cache/nltk_data \
     FASTEMBED_CACHE_PATH=/app/.cache/fastembed
 
-RUN . /cachi2/cachi2.env && \
-    python3 -m venv /app/.venv && \
+RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
     rm -rf /root/.cache/pip /tmp/* /var/tmp/*
 
-RUN . /cachi2/cachi2.env && \
-    /app/.venv/bin/pip install --no-cache-dir /cachi2/output/deps/generic/en_core_web_lg-3.8.0-py3-none-any.whl
+RUN /app/.venv/bin/pip install --no-cache-dir /cachi2/output/deps/generic/en_core_web_lg-3.8.0-py3-none-any.whl
 
-RUN . /cachi2/cachi2.env && \
-    /app/.venv/bin/pip install --no-cache-dir -r requirements-torch.txt
+RUN /app/.venv/bin/pip install --no-cache-dir -r requirements-torch.txt
 
 RUN set -ex && \
     GUARDRAILS_PROFILE=$GUARDRAILS_PROFILE /app/.venv/bin/python ./scripts/pre_download_required_models.py && \
