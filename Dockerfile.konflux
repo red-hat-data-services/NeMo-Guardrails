@@ -1,0 +1,75 @@
+FROM registry.access.redhat.com/ubi9/python-312:latest as build
+
+USER 0
+WORKDIR /app
+
+ARG GUARDRAILS_PROFILE=opensource
+
+COPY requirements.txt requirements-torch.txt pyproject.toml README.md ./
+COPY nemoguardrails/ ./nemoguardrails/
+COPY scripts/ ./scripts/
+COPY examples/bots/ ./examples/bots/
+
+RUN chmod +x ./scripts/entrypoint.sh
+
+RUN python3 -m pip install --no-cache-dir pyyaml
+
+RUN python3 ./scripts/filter_guardrails.py ./scripts/provider-list.yaml $GUARDRAILS_PROFILE
+
+ENV HF_HOME=/app/.cache/huggingface \
+    TRANSFORMERS_CACHE=/app/.cache/transformers \
+    SENTENCE_TRANSFORMERS_HOME=/app/.cache/sentence_transformers \
+    NLTK_DATA=/app/.cache/nltk_data \
+    FASTEMBED_CACHE_PATH=/app/.cache/fastembed
+
+RUN python3 -m venv /app/.venv && \
+    /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
+    /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
+    rm -rf /root/.cache/pip /tmp/* /var/tmp/*
+
+RUN /app/.venv/bin/pip install --no-cache-dir /cachi2/output/deps/generic/en_core_web_lg-3.8.0-py3-none-any.whl
+
+RUN /app/.venv/bin/pip install --no-cache-dir -r requirements-torch.txt
+
+RUN set -ex && \
+    GUARDRAILS_PROFILE=$GUARDRAILS_PROFILE /app/.venv/bin/python ./scripts/pre_download_required_models.py && \
+    find /app/.cache -type f -name "*.pyc" -delete && \
+    find /app/.cache -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/.cache -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true && \
+    rm -rf /app/.cache/huggingface/xet /root/.cache /tmp/* /var/tmp/*
+
+FROM registry.access.redhat.com/ubi9/python-312:latest as runtime
+
+USER 0
+WORKDIR /app
+
+COPY --from=build /app /app
+
+RUN rm -f /etc/security/namespace.conf /usr/lib64/security/pam_namespace.so || true && \
+    chgrp -R 0 /app && \
+    chmod -R g=u /app && \
+    chmod +x /app/scripts/entrypoint.sh
+
+USER 1001
+
+ENV HF_HOME=/app/.cache/huggingface \
+    TRANSFORMERS_CACHE=/app/.cache/transformers \
+    SENTENCE_TRANSFORMERS_HOME=/app/.cache/sentence_transformers \
+    NLTK_DATA=/app/.cache/nltk_data \
+    FASTEMBED_CACHE_PATH=/app/.cache/fastembed \
+    PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+EXPOSE 8000
+ENTRYPOINT ["./scripts/entrypoint.sh"]
+
+LABEL com.redhat.component="odh-nemo-guardrails" \
+      name="rhoai/odh-nemo-guardrails-rhel9" \
+      description="NeMo Guardrails is an open-source toolkit for easily adding programmable guardrails to LLM-based conversational systems" \
+      summary="odh-nemo-guardrails" \
+      maintainer="['managed-open-data-hub@redhat.com']" \
+      io.openshift.expose-services="8000:http" \
+      io.k8s.display-name="odh-nemo-guardrails" \
+      io.k8s.description="NeMo Guardrails toolkit for controlling and securing LLM-based conversational systems" \
+      com.redhat.license_terms="https://www.redhat.com/licenses/Red_Hat_Standard_EULA_20191108.pdf"
