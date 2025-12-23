@@ -8,6 +8,8 @@ cython==3.2.3
     # via pyyaml
 flit-core==3.12.0
     # via wheel
+nose==1.3.7
+    # via annoy
 wheel==0.45.1
     # via pyyaml
 
