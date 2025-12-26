@@ -260,7 +260,7 @@ py-rust-stemmers==0.1.5
     # via fastembed
 pycparser==2.22
     # via cffi
-pydantic==2.11.9
+pydantic==2.12.5
     # via
     #   nemoguardrails (pyproject.toml)
     #   confection
