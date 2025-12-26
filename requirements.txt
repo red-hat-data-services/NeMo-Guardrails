@@ -22,7 +22,7 @@ anyio==4.11.0
     #   httpx
     #   openai
     #   starlette
-attrs==25.3.0
+attrs==25.4.0
     # via aiohttp
 blis==1.3.0
     # via thinc
