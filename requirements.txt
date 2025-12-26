@@ -246,7 +246,7 @@ pillow==11.3.0
     # via
     #   fastembed
     #   sentence-transformers
-preshed==3.0.10
+preshed==3.0.12
     # via
     #   spacy
     #   thinc
