@@ -188,7 +188,7 @@ optional = true
 
 [tool.poetry.group.docs.dependencies]
 toml = "^0.10.2"
-sphinx-reredirects = "<0.2"
+sphinx-reredirects = "<1.2"
 sphinx = "<=7.5"
 myst-parser = "<=5"
 sphinx-copybutton = "<=0.6"
