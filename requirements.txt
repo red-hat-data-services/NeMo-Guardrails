@@ -225,7 +225,7 @@ openai==1.97.0
     # via langchain-openai
 opentelemetry-api==1.38.0
     # via nemoguardrails (pyproject.toml)
-orjson==3.11.3
+orjson==3.11.5
     # via langsmith
 packaging==25.0
     # via
