@@ -84,7 +84,7 @@ frozenlist==1.7.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2025.9.0
+fsspec==2025.12.0
     # via
     #   huggingface-hub
     #   torch
