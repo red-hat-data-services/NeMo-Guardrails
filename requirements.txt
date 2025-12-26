@@ -330,7 +330,7 @@ scipy==1.16.3
     # via
     #   scikit-learn
     #   sentence-transformers
-sentence-transformers==5.1.2
+sentence-transformers==5.2.0
     # via nemoguardrails (pyproject.toml)
 setuptools==80.9.0
     # via
