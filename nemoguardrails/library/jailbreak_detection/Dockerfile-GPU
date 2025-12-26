@@ -1,5 +1,5 @@
 # Use nvidia/cuda:12.3.1-base-ubuntu20.04 as the base image
-FROM nvidia/cuda:12.3.1-base-ubuntu20.04
+FROM nvidia/cuda:12.9.1-base-ubuntu20.04
 
 # Install git and wget
 RUN apt-get update && apt-get install -y git gcc g++ wget && apt-get clean
