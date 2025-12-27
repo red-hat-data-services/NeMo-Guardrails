@@ -74,7 +74,7 @@ distro==1.9.0
     # via openai
 einops==0.8.1
     # via nemoguardrails (pyproject.toml)
-fastapi==0.122.0
+fastapi==0.128.0
     # via nemoguardrails (pyproject.toml)
 fastembed==0.6.0
     # via nemoguardrails (pyproject.toml)
