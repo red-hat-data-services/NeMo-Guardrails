@@ -242,7 +242,7 @@ pandas==2.3.1
     # via nemoguardrails (pyproject.toml)
 phonenumbers==9.0.10
     # via presidio-analyzer
-pillow==11.3.0
+pillow==12.1.0
     # via
     #   fastembed
     #   sentence-transformers
