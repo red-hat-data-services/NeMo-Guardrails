@@ -19,7 +19,7 @@ from typing import Optional
 
 import numpy as np
 
-from nemoguardrails.benchmark.mock_llm_server.config import ModelSettings
+from benchmark.mock_llm_server.config import ModelSettings
 
 
 def generate_id(prefix: str = "chatcmpl") -> str:
@@ -56,7 +56,7 @@ def get_latency_seconds(config: ModelSettings, seed: Optional[int] = None) -> fl
         a_min=config.latency_min_seconds,
         a_max=config.latency_max_seconds,
     )
-    return float(latency_seconds)
+    return float(latency_seconds[0])
 
 
 def is_unsafe(config: ModelSettings, seed: Optional[int] = None) -> bool:

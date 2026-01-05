@@ -16,7 +16,7 @@
 import pytest
 from pydantic import ValidationError
 
-from nemoguardrails.benchmark.mock_llm_server.models import (
+from benchmark.mock_llm_server.models import (
     ChatCompletionChoice,
     ChatCompletionRequest,
     ChatCompletionResponse,
