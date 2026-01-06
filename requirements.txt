@@ -410,7 +410,7 @@ tqdm==4.67.1
     #   transformers
 transformers==4.57.1
     # via sentence-transformers
-typer==0.19.2
+typer==0.21.1
     # via
     #   nemoguardrails (pyproject.toml)
     #   spacy
