@@ -159,7 +159,7 @@ langchain-core==0.3.76
     #   langchain-text-splitters
 langchain-nvidia-ai-endpoints==0.3.19
     # via nemoguardrails (pyproject.toml)
-langchain-openai==0.3.28
+langchain-openai==1.1.7
     # via nemoguardrails (pyproject.toml)
 langchain-text-splitters==0.3.11
     # via langchain
