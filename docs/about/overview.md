@@ -127,6 +127,7 @@ For practical examples, try the following tutorial:
 Personally Identifiable Information (PII) detection helps protect user privacy by detecting and masking sensitive data in user inputs, LLM outputs, and retrieved content.
 The NeMo Guardrails library supports PII detection through multiple integrations:
 
+- **Gliner**: Use [NVIDIA GLiNER-PII](../user-guides/community/gliner.md) for detecting entities such as names, email addresses, phone numbers, social security numbers, and more.
 - **Presidio-based detection**: Use [Microsoft Presidio](../user-guides/community/presidio.md) for detecting entities such as names, email addresses, phone numbers, social security numbers, and more.
 - **Private AI**: Integrate with [Private AI](../user-guides/community/privateai.md) for advanced PII detection and masking.
 - **AutoAlign**: Use [AutoAlign PII detection](../user-guides/community/auto-align.md) with customizable entity types.
@@ -201,7 +202,7 @@ You can integrate the NeMo Guardrails library into your application using the to
 
 ## Tools
 
-The following are the tools you can use to interact with the NeMo Guardrails library.
+The following are the tools you can use to interact with the NeMo Guardrails library and integrate it into your application.
 
 ### Python SDK
 
