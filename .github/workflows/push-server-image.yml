@@ -13,6 +13,7 @@ on:
       - 'nemoguardrails/*'
       - '.github/workflows/*'
     types: [labeled, opened, synchronize, reopened]
+  workflow_dispatch:
 jobs:
   build-and-push-ci:
     runs-on: ubuntu-latest
@@ -30,7 +31,15 @@ jobs:
       - name: Assigning develop-branch context
         if: github.head_ref == '' && github.ref == 'refs/heads/develop'
         run: echo "BUILD_CONTEXT=main" >> $GITHUB_ENV
-
+      # Print variables for debugging
+      - name: Log reference variables
+        run: |
+          echo "CONTEXT: ${{ env.BUILD_CONTEXT }}"
+          echo "GITHUB.REF: ${{ github.ref }}"
+          echo "GITHUB.HEAD_REF: ${{ github.head_ref }}"
+          echo "SHA: ${{ github.event.pull_request.head.sha }}"
+          echo "MAIN IMAGE AT: ${{ vars.RELEASE_REPO }}:latest"
+          echo "CI IMAGE AT: ${{ vars.CI_REPO }}:${{ github.event.pull_request.head.sha }}"
       # Run checkouts
       - uses: mheap/github-action-required-labels@v4
         if: env.BUILD_CONTEXT == 'ci'
@@ -44,17 +53,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - uses: actions/checkout@v3
         if: env.BUILD_CONTEXT == 'main' ||  env.BUILD_CONTEXT == 'tag'
-      #
-      # Print variables for debugging
-      - name: Log reference variables
-        run: |
-          echo "CONTEXT: ${{ env.BUILD_CONTEXT }}"
-          echo "GITHUB.REF: ${{ github.ref }}"
-          echo "GITHUB.HEAD_REF: ${{ github.head_ref }}"
-          echo "SHA: ${{ github.event.pull_request.head.sha }}"
-          echo "MAIN IMAGE AT: ${{ vars.RELEASE_REPO }}:latest"
-          echo "CI IMAGE AT: ${{ vars.CI_REPO }}:${{ github.event.pull_request.head.sha }}"
-
       # Set environments depending on context
       - name: Set CI environment
         if:  env.BUILD_CONTEXT == 'ci'
