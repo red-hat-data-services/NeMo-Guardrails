@@ -131,7 +131,6 @@ This is useful for:
 | `rails` | `Rails` | Rails configuration (input, output, dialog, etc.) |
 | `flows` | `List[Dict]` | Colang flow definitions |
 | `prompts` | `List[TaskPrompt]` | Custom prompts for various tasks |
-| `streaming` | `bool` | Enable streaming responses |
 | `colang_version` | `str` | Colang version ("1.0" or "2.x") |
 
 ---
@@ -223,6 +222,24 @@ response = rails.generate(messages=[
 ])
 ```
 
+You can access context variables in Colang flows using `$variable_name` syntax:
+
+```colang
+define bot explain permissions
+    "Hello {$user_name}! As an {$user_role}, you have full system access."
+```
+
+Alternatively, you can access context variables through the `context` parameter. For example, you can set up an action function that uses a variable extracted from the `context` parameter as follows:
+
+```python
+@action()
+async def check_permissions(context: Optional[dict] = None):
+    user_role = context.get("user_role")
+    return user_role == "admin"
+```
+
+For detailed information about context variables, see [Action Parameters](../configuration-guide/actions/action-parameters.md#the-context-parameter) and [Colang Variables](../configuration-guide/colang/colang-1/colang-language-syntax-guide.md#variables).
+
 ### Asynchronous Generation
 
 For async contexts, use `generate_async`:
@@ -288,7 +305,7 @@ response = rails.generate(
     messages=[{"role": "user", "content": "Hello!"}],
     options={
         "rails": ["input", "output"],  # Only apply these rails
-        "output_vars": ["score"],       # Return context variables
+        "output_vars": ["user_message"],       # Return context variables
         "log": {
             "activated_rails": True,
             "llm_calls": True
