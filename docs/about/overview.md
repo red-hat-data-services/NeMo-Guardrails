@@ -19,7 +19,7 @@ content:
 
 # Overview of NVIDIA NeMo Guardrails Library
 
-The NVIDIA NeMo Guardrails library ([PyPI](https://pypi.org/project/nemoguardrails/) | [GitHub](https://github.com/NVIDIA/NeMo-Guardrails)) is an open-source Python package for adding programmable guardrails to LLM-based applications. It intercepts inputs and outputs, applies configurable safety checks, and blocks or modifies content based on defined policies.
+The NVIDIA NeMo Guardrails library ([PyPI](https://pypi.org/project/nemoguardrails/) | [GitHub](https://github.com/NVIDIA/NeMo-Guardrails)) is an open-source Python package for adding programmable guardrails to LLM-based applications. Guardrails make your LLM-based application safer and more secure by blocking inappropriate, off-topic or malicious user inputs or LLM responses.
 
 ## NeMo Guardrails Library within the NVIDIA NeMo Software Stack
 
@@ -34,44 +34,7 @@ NeMo Guardrails is part of the NVIDIA NeMo software stack. It takes part in addi
 | Scaling          | Application-level                | Managed by orchestrator          |
 | Configuration    | YAML + Colang                    | Same YAML + Colang format        |
 
-<!-- TODO: clarify if this is achievable today -->
 Configurations are portable between the library and microservice, so you can develop locally with the library and deploy to production with the microservice.
-
-## Architecture
-
-The NeMo Guardrails library is designed to be integrated into LLM-based applications. It intercepts inputs and outputs, applies configurable safety checks, and blocks or modifies content based on defined policies.
-
-```{mermaid}
-%%{init: {'theme': 'neutral', 'themeVariables': { 'background': 'transparent' }}}%%
-
-flowchart TB
-  A("Application Code")
-  B("NeMo Guardrails Library")
-  C("Large Language Model (LLM)")
-
-  A <--> B
-
-subgraph NemoGuard["NemoGuard NIMs"]
-  direction TB
-  D("NemoGuard Content Safety")
-  E("NemoGuard Topic Control")
-  F("NemoGuard Jailbreak Detection")
-end
-
-  B <--> NemoGuard
-  NemoGuard <--> C
-
-  style A fill:#d8d8e8,stroke:#999
-  style B fill:#f0f7e6,stroke:#76b900,stroke-width:2px
-  style C fill:#d8d8e8,stroke:#999
-  style D fill:#f0f7e6,stroke:#76b900
-  style E fill:#f0f7e6,stroke:#76b900
-  style F fill:#f0f7e6,stroke:#76b900
-```
-
-*Application code interacting with LLMs through the NeMo Guardrails library.*
-
----
 
 ## Use Cases
 
@@ -226,3 +189,7 @@ nemoguardrails server --config ./config --port 8000
 ```
 
 The server exposes an HTTP API compatible with OpenAI's `/v1/chat/completions` endpoint.
+
+## Next Steps
+
+To get started with NeMo Guardrails, begin by [installing the library](../getting-started/installation-guide.md) and try out one of the [tutorials](../getting-started/tutorials/index.md).

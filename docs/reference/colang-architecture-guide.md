@@ -1,6 +1,6 @@
 ---
 title:
-  page: "Architecture Guide"
+  page: "Colang Architecture Guide"
   nav: "Architecture"
 description: "Explore the event-driven runtime, canonical messages, and server design."
 keywords: ["guardrails architecture", "event-driven runtime", "llmrails", "colang"]
@@ -12,7 +12,7 @@ content:
   audience: [engineer, data_scientist]
 ---
 
-# Architecture Guide
+# Colang Architecture Guide
 
 This document provides more details on the architecture and the approach that the NeMo Guardrails library takes for implementing guardrails.
 
@@ -182,7 +182,7 @@ The stream of events processed by the guardrails runtime (a simplified view with
 
 ### Extending the Default Process
 
-As shown in the examples [here](../README.md#examples), the event-driven design allows us to hook into the process and add additional guardrails.
+As shown in the examples [here](../../README.md#examples), the event-driven design allows us to hook into the process and add additional guardrails.
 
 For example, in the [grounding rail](../../examples/bots/abc/README.md) example, we can add an additional fact-checking guardrail (through the `check_facts` action) after a question about the report.
 

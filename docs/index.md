@@ -32,7 +32,7 @@ Apply input, retrieval, dialog, execution, and output rails to protect LLM appli
 :::
 
 :::{grid-item-card} How It Works
-:link: about/how-it-works/index
+:link: about/how-it-works
 :link-type: doc
 
 Learn the sequence diagrams and architecture for building guardrails.
@@ -128,8 +128,8 @@ Integrate NeMo Guardrails with LangChain chains, runnables, and LangGraph workfl
 :hidden:
 
 Overview <about/overview.md>
+How It Works <about/how-it-works.md>
 Guardrail Types <about/rail-types.md>
-How It Works <about/how-it-works/index.md>
 Supported LLMs <about/supported-llms.md>
 Release Notes <about/release-notes.md>
 ```
@@ -219,6 +219,15 @@ Tools Integration <integration/tools-integration.md>
 :hidden:
 
 Troubleshooting <troubleshooting>
+```
+
+```{toctree}
+:caption: Reference
+:name: Reference
+:hidden:
+
+Colang Architecture Guide <reference/colang-architecture-guide.md>
+Guardrails Sequence Diagrams <reference/guardrails-sequence-diagrams.md>
 ```
 
 ```{toctree}
