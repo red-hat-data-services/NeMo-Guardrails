@@ -207,7 +207,7 @@ networkx==3.5
     # via torch
 nltk==3.9.2
     # via nemoguardrails (pyproject.toml)
-numpy==2.3.3
+numpy==2.4.1
     # via
     #   blis
     #   fastembed
