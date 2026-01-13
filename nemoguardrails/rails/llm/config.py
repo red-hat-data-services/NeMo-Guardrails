@@ -1457,7 +1457,8 @@ class RailsConfig(BaseModel):
 
     streaming: bool = Field(
         default=False,
-        description="Whether this configuration should use streaming mode or not.",
+        deprecated="The 'streaming' field is no longer required. Use stream_async() method directly instead. This field will be removed in a future version.",
+        description="DEPRECATED: Use stream_async() method instead. This field is ignored.",
     )
 
     enable_rails_exceptions: bool = Field(
@@ -1746,20 +1747,6 @@ class RailsConfig(BaseModel):
                     flow_data["elements"] = parse_flow_elements(flow_data["elements"])
 
         return cls.parse_obj(obj)
-
-    @property
-    def streaming_supported(self):
-        """Whether the current config supports streaming or not."""
-
-        if len(self.rails.output.flows) > 0:
-            # if we have output rails streaming enabled
-            # we keep it in case it was needed when we have
-            # support per rails
-            if self.rails.output.streaming and self.rails.output.streaming.enabled:
-                return True
-            return False
-
-        return True
 
     def __add__(self, other):
         """Adds two RailsConfig objects."""
