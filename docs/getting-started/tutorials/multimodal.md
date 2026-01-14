@@ -12,7 +12,7 @@ content:
 ---
 
 <!--
-  SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   SPDX-License-Identifier: Apache-2.0
 -->
 
@@ -32,15 +32,20 @@ The NeMo Guardrails library supports multimodal content safety for input and out
 Ensure image size and prompt length do not exceed the model's maximum context length.
 :::
 
+## Prerequisites
+
+- The NeMo Guardrails library [installed](../installation-guide.md) with the `openai` extra.
+- A personal NVIDIA API key generated on <https://build.nvidia.com/>.
+
 ## Configure Guardrails
 
-1. Create a configuration directory and add `config.yml`:
+1. Create a configuration directory and add `config.yml`.
 
    ```{literalinclude} ../../../examples/configs/content_safety_vision/config.yml
    :language: yaml
    ```
 
-1. Add `prompts.yml`:
+1. Add `prompts.yml`.
 
    ```{literalinclude} ../../../examples/configs/content_safety_vision/prompts.yml
    :language: yaml
@@ -50,13 +55,22 @@ Ensure image size and prompt length do not exceed the model's maximum context le
 
 This example sends image requests to OpenAI endpoints and tests safety checks on a handgun image.
 
-1. Set your OpenAI API key:
+1. Set your OpenAI API key.
 
    ```console
    export OPENAI_API_KEY=<your-openai-api-key>
    ```
 
-1. Import libraries:
+1. Install the IPython REPL and run it to interpret the Python code below.
+
+      ```console
+      $ pip install ipython
+      $ ipython
+
+      In [1]:
+      ```
+
+1. Import libraries.
 
    ```{literalinclude} ../../../examples/configs/content_safety_vision/demo.py
    :language: python
@@ -64,7 +78,7 @@ This example sends image requests to OpenAI endpoints and tests safety checks on
    :end-before: "# end-prerequisites"
    ```
 
-1. Load the configuration:
+1. Load the configuration.
 
    ```{literalinclude} ../../../examples/configs/content_safety_vision/demo.py
    :language: python
@@ -72,7 +86,7 @@ This example sends image requests to OpenAI endpoints and tests safety checks on
    :end-before: "# end-config"
    ```
 
-1. Send a safe image reasoning request:
+1. Send a safe image reasoning request.
 
    ```{literalinclude} ../../../examples/configs/content_safety_vision/demo.py
    :language: python
@@ -80,7 +94,7 @@ This example sends image requests to OpenAI endpoints and tests safety checks on
    :end-before: "# end-image-reasoning"
    ```
 
-1. Send an unsafe request:
+1. Send an unsafe request.
 
    ```{literalinclude} ../../../examples/configs/content_safety_vision/demo.py
    :language: python
@@ -93,13 +107,10 @@ This example sends image requests to OpenAI endpoints and tests safety checks on
 Some models such as Llama Vision require base64-encoded images instead of URLs.
 
 ```{code-block} python
-:emphasize-lines: 11, 23
-
 import base64
 import json
 
-from nemoguardrails import RailsConfig
-from nemoguardrails.rails.llm.llmrails import LLMRails
+from nemoguardrails import LLMRails, RailsConfig
 
 config = RailsConfig.from_path("./content_safety_vision")
 rails = LLMRails(config)
