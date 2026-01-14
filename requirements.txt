@@ -155,7 +155,7 @@ langchain-openai==0.3.28
     # via nemoguardrails (pyproject.toml)
 langchain-text-splitters==0.3.11
     # via langchain
-langcodes==3.5.0
+langcodes==3.5.1
     # via spacy
 langsmith==0.4.30
     # via
