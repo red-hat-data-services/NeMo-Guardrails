@@ -19,7 +19,7 @@ content:
 
 # Overview of NVIDIA NeMo Guardrails Library
 
-The NVIDIA NeMo Guardrails library ([PyPI](https://pypi.org/project/nemoguardrails/) | [GitHub](https://github.com/NVIDIA/NeMo-Guardrails)) is an open-source Python package for adding programmable guardrails to LLM-based applications. Guardrails make your LLM-based application safer and more secure by blocking inappropriate, off-topic or malicious user inputs or LLM responses.
+The NVIDIA NeMo Guardrails library ([PyPI](https://pypi.org/project/nemoguardrails/) | [GitHub](https://github.com/NVIDIA-NeMo/Guardrails)) is an open-source Python package for adding programmable guardrails to LLM-based applications. Guardrails make your LLM-based application safer and more secure by blocking inappropriate, off-topic or malicious user inputs or LLM responses.
 
 ## NeMo Guardrails Library within the NVIDIA NeMo Software Stack
 
@@ -152,43 +152,28 @@ You can integrate the NeMo Guardrails library into your application using the to
 
     The `generate` method accepts the same message format as the OpenAI Chat Completions API.
 
-2. **Server API**: You can solely set up a guardrails server after programming guardrails using the Python SDK. You can then start a local NeMo Guardrails server with the following command. This server exposes an HTTP API compatible with OpenAI's `/v1/chat/completions` endpoint.
+2. **API Server**: You can solely set up a guardrails server after programming guardrails using the Python SDK. You can then start a local NeMo Guardrails server with the following command.
 
     ```bash
     nemoguardrails server --config ./config --port 8000
     ```
 
-    The server exposes HTTP APIs compatible with OpenAI's `/v1/chat/completions` endpoint. You can then use the server in your application by sending requests to the server's endpoint.
+    The server exposes API endpoints such as `/v1/chat/completions` for guardrailed chat completions.
+
+    ```bash
+    curl -X POST http://localhost:8000/v1/chat/completions \
+      -H "Content-Type: application/json" \
+      -d '{
+        "config_id": "my-config",
+        "messages": [{"role": "user", "content": "Hello!"}]
+      }'
+    ```
+
+    <!-- The server exposes HTTP APIs compatible with OpenAI's `/v1/chat/completions` endpoint. You can then use the server in your application by sending requests to the server's endpoint. -->
+
 :::
 
 ---
-
-## Tools
-
-The following are the tools you can use to interact with the NeMo Guardrails library and integrate it into your application.
-
-### Python SDK
-
-```python
-from nemoguardrails import LLMRails, RailsConfig
-
-config = RailsConfig.from_path("./config")
-rails = LLMRails(config)
-
-response = rails.generate(
-    messages=[{"role": "user", "content": "Hello!"}]
-)
-```
-
-The `generate` method accepts the same message format as the OpenAI Chat Completions API.
-
-### CLI Server
-
-```bash
-nemoguardrails server --config ./config --port 8000
-```
-
-The server exposes an HTTP API compatible with OpenAI's `/v1/chat/completions` endpoint.
 
 ## Next Steps
 

@@ -6,7 +6,7 @@
 # NVIDIA NeMo Guardrails Library Developer Guide
 
 {bdg-link-primary}`PyPI <https://pypi.org/project/nemoguardrails/>`
-{bdg-link-secondary}`GitHub <https://github.com/NVIDIA/NeMo-Guardrails>`
+{bdg-link-secondary}`GitHub <https://github.com/NVIDIA-NeMo/Guardrails>`
 
 The NeMo Guardrails library is an open-source Python package for adding programmable guardrails to LLM-based applications. It intercepts inputs and outputs, applies configurable safety checks, and blocks or modifies content based on defined policies.
 
@@ -35,7 +35,7 @@ Apply input, retrieval, dialog, execution, and output rails to protect LLM appli
 :link: about/how-it-works
 :link-type: doc
 
-Learn the sequence diagrams and architecture for building guardrails.
+High level explanation of how Guardrails works.
 :::
 
 :::{grid-item-card} Supported LLMs
@@ -78,18 +78,18 @@ Once you've completed the get-started tutorials, explore the following areas to 
 ::::{grid} 1 1 2 2
 :gutter: 3
 
-:::{grid-item-card} Overview
-:link: configure-rails/overview
+:::{grid-item-card} About Configuring Guardrails
+:link: configure-rails/index
 :link-type: doc
 
-Learn to write config.yml, Colang flows, and custom actions for guardrails.
+Configure YAML files, Colang flows, custom actions, and other components to control LLM behavior.
 :::
 
-:::{grid-item-card} Run Rails
+:::{grid-item-card} About Running Guardrailed Inference
 :link: run-rails/index
 :link-type: doc
 
-Use RailsConfig and LLMRails classes to load configurations and generate guarded responses.
+Run guardrailed inference using the Python API or Guardrails API server.
 :::
 
 :::{grid-item-card} Evaluate
@@ -106,11 +106,11 @@ Measure accuracy and performance of dialog, fact-checking, moderation, and hallu
 Debug guardrails with verbose mode, explain method, and generation log options.
 :::
 
-:::{grid-item-card} Deploy
+:::{grid-item-card} Deployment Options
 :link: deployment/index
 :link-type: doc
 
-Deploy guardrails using the local server, Docker containers, or production microservices.
+Deploy guardrails using the local API server, Docker containers, or production microservices.
 :::
 
 :::{grid-item-card} LangChain Frameworks
@@ -168,11 +168,9 @@ Exceptions and Error Handling <configure-rails/exceptions.md>
 :name: Run Guardrailed Inference
 :hidden:
 
-Run Rails <run-rails/index.md>
-Core Classes <run-rails/core-classes.md>
-Generation Options <run-rails/generation-options.md>
-Streaming <run-rails/streaming.md>
-Event-Based API <run-rails/event-based-api.md>
+About Running Guardrailed Inference <run-rails/index.md>
+Python API <run-rails/using-python-apis/index.md>
+Guardrails API Server <run-rails/using-fastapi-server/index.md>
 ```
 
 ```{toctree}
@@ -194,13 +192,12 @@ Tracing <observability/tracing/index.md>
 ```
 
 ```{toctree}
-:caption: Deployment Guides
+:caption: More Deployment Options
 :hidden:
 
-Deploy <deployment/index>
-Local Server <deployment/local-server/index>
+Deployment Options <deployment/index>
 Docker <deployment/using-docker>
-Microservice <deployment/using-microservice>
+NeMo Microservice <deployment/using-microservice>
 Blueprint Integration <integration/safeguarding-ai-virtual-assistant-blueprint>
 ```
 
@@ -214,6 +211,19 @@ Tools Integration <integration/tools-integration.md>
 ```
 
 ```{toctree}
+:caption: Reference
+:name: Reference
+:hidden:
+
+Architecture <reference/colang-architecture-guide.md>
+Sequence Diagrams <reference/guardrails-sequence-diagrams.md>
+Use Case Diagrams <reference/use-case-diagrams.md>
+Python API <reference/python-api/index>
+CLI <reference/cli/index>
+Guardrails API Server Endpoints <reference/api-server-endpoints/index>
+```
+
+```{toctree}
 :caption: Troubleshooting
 :name: Troubleshooting
 :hidden:
@@ -222,23 +232,11 @@ Troubleshooting <troubleshooting>
 ```
 
 ```{toctree}
-:caption: Reference
-:name: Reference
-:hidden:
-
-Colang Architecture Guide <reference/colang-architecture-guide.md>
-Guardrails Sequence Diagrams <reference/guardrails-sequence-diagrams.md>
-```
-
-```{toctree}
 :caption: Resources
 :name: Resources
 :hidden:
 
-faqs
-Python API <python-api/index>
-CLI <cli/index>
-Use Case Diagrams <resources/use-case-diagrams.md>
-glossary
-Security <security/guidelines>
+FAQs <resources/faqs.md>
+Glossary <resources/glossary.md>
+Security <resources/security/guidelines.md>
 ```

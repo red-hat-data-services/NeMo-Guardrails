@@ -1,8 +1,8 @@
 ---
 title:
-  page: "NeMo Guardrails Library Deployment Options"
-  nav: "Deploy"
-description: "Deploy guardrails using the local server, Docker containers, or production microservices."
+  page: "About Deployment Options"
+  nav: "Deployment Options"
+description: "Deploy guardrails using the local API server, Docker containers, or production microservices."
 topics: ["Deployment", "AI Safety"]
 tags: ["Docker", "Server", "Microservices", "Production"]
 content:
@@ -11,19 +11,12 @@ content:
   audience: ["Developer", "DevOps Engineer", "AI Engineer"]
 ---
 
-# NeMo Guardrails Library Deployment Options
+# About Deployment Options
 
-You can deploy the NeMo Guardrails library in the following ways.
+You can deploy the NeMo Guardrails library as a Docker container or use the production-ready, deployment-ready, pre-built microservice in the NeMo microservices platform.
 
 ::::{grid} 1 1 2 2
 :gutter: 3
-
-:::{grid-item-card} Local Server
-:link: local-server/index
-:link-type: doc
-
-Set up and run guardrails and actions servers locally for development and testing.
-:::
 
 :::{grid-item-card} Docker
 :link: using-docker
@@ -32,11 +25,11 @@ Set up and run guardrails and actions servers locally for development and testin
 Build and run NeMo Guardrails Docker images for rapid deployment and testing.
 :::
 
-:::{grid-item-card} Microservice
+:::{grid-item-card} NeMo Microservice
 :link: using-microservice
 :link-type: doc
 
-Deploy guardrails as a production-ready microservice using NeMo Microservices.
+Deploy guardrails as a production-ready microservice using the NeMo microservices platform.
 :::
 
 ::::

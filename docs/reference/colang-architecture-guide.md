@@ -182,9 +182,9 @@ The stream of events processed by the guardrails runtime (a simplified view with
 
 ### Extending the Default Process
 
-As shown in the examples [here](../../README.md#examples), the event-driven design allows us to hook into the process and add additional guardrails.
+The event-driven design allows us to hook into the process and add additional guardrails.
 
-For example, in the [grounding rail](../../examples/bots/abc/README.md) example, we can add an additional fact-checking guardrail (through the `check_facts` action) after a question about the report.
+For example, we can add an additional fact-checking guardrail (through the `check_facts` action) after a question about the report.
 
 ```colang
 define flow answer report question
@@ -270,4 +270,4 @@ This library provides a guardrails server with an interface similar to publicly 
 
 ![Guardrails Server](guardrails-server.png)
 
-The server is designed with high concurrency in mind, hence the async implementation using FastAPI.
+The server is designed with high concurrency in mind, hence the async implementation using the Guardrails API.

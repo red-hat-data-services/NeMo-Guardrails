@@ -1,14 +1,15 @@
 ---
 title:
-  page: "Streaming Generated Responses in Real-Time"
+  page: "Streaming Responses"
   nav: "Streaming"
-description: "Stream LLM responses in real-time with the stream_async method and output rails support."
-topics: ["AI Safety", "LLM Guardrails"]
-tags: ["Python", "Streaming", "Async", "Real-Time"]
+description: "Stream LLM responses in real-time with the stream_async method."
+keywords: ["stream_async", "streaming responses", "real-time LLM", "StreamingHandler", "async streaming"]
+topics: ["generative_ai", "developer_tools"]
+tags: ["llms", "ai_inference", "ai_platforms"]
 content:
-  type: "How-To"
-  difficulty: "Intermediate"
-  audience: ["Developer", "AI Engineer"]
+  type: tutorial
+  difficulty: technical_intermediate
+  audience: ["data_scientist", "engineer"]
 ---
 
 # Streaming Generated Responses in Real-Time
@@ -17,8 +18,8 @@ If the application LLM supports streaming, the NeMo Guardrails library can strea
 
 For information about configuring streaming with output guardrails, refer to the following:
 
-- For configuration, refer to [streaming output configuration](../user-guides/configuration-guide.md#streaming-output-configuration).
-- For sample Python client code, refer to [streaming output](../getting-started/5-output-rails/README.md#streaming-output).
+- For configuration, refer to [](../../configure-rails/yaml-schema/streaming/output-rail-streaming.md).
+- For sample Python client code, refer to [](../../getting-started/tutorials/index.md).
 
 ## Usage
 
@@ -84,9 +85,9 @@ print(result)
 
 You can also provide your own async generator that yields tokens, which is useful when:
 
-- You want to use a different LLM provider that has its own streaming API
-- You have pre-generated responses that you want to stream through guardrails
-- You want to implement custom token generation logic
+- You want to use a different LLM provider that has its own streaming API.
+- You have pre-generated responses that you want to stream through guardrails.
+- You want to implement custom token generation logic.
 - You want to test your output rails or its config in streaming mode on predefined responses without actually relying on an actual LLM generation.
 
 To use an external generator, pass it to the `generator` parameter of `stream_async`:
@@ -115,9 +116,9 @@ async for chunk in app.stream_async(
 
 When using an external generator:
 
-- The internal LLM generation is completely bypassed
-- Output rails are still applied to the LLM responses returned by the external generator, if configured
-- The generator should yield string tokens
+- The internal LLM generation is completely bypassed.
+- Output rails are still applied to the LLM responses returned by the external generator, if configured.
+- The generator should yield string tokens.
 
 Example with a real LLM API:
 
@@ -184,31 +185,16 @@ info = rails.explain()
 info.print_llm_calls_summary()
 ```
 
-For more information about streaming token usage support across different providers, refer to the [LangChain documentation on token usage tracking](https://python.langchain.com/docs/how_to/chat_token_usage_tracking/#streaming). For detailed information about accessing generation logs and token usage, see the [Generation Options](generation-options.md#detailed-logging-information) and [Detailed Logging](../user-guides/detailed-logging/README.md) documentation.
+For more information about streaming token usage support across different providers, refer to the [LangChain documentation on token usage tracking](https://python.langchain.com/docs/how_to/chat_token_usage_tracking/#streaming). For detailed information about accessing generation logs and token usage, see [](generation-options.md#detailed-logging-information) and [](../../observability/logging/index.md).
 
-### Server API
-
-To make a call to the NeMo Guardrails library Server in streaming mode, you have to set the `stream` parameter to `True` inside the JSON body. For example, to get the completion for a chat session using the `/v1/chat/completions` endpoint:
-
-```text
-POST /v1/chat/completions
+```{note}
+For streaming while using the Guardrails API server, refer to [](../using-fastapi-server/chat-with-guardrailed-model.md#streaming-responses).
 ```
 
-```json
-{
-    "config_id": "some_config_id",
-    "messages": [{
-      "role":"user",
-      "content":"Hello! What can you do for me?"
-    }],
-    "stream": true
-}
-```
-
-### Streaming for LLMs deployed using HuggingFacePipeline
+### Streaming for LLMs Deployed Using HuggingFacePipeline
 
 We also support streaming for LLMs deployed using `HuggingFacePipeline`.
-One example is provided in the [HF Pipeline Dolly](https://github.com/NVIDIA/NeMo-Guardrails/tree/develop/examples/configs/llm/hf_pipeline_dolly/README.md) configuration.
+One example is provided in the [HF Pipeline Dolly](https://github.com/NVIDIA-NeMo/Guardrails/tree/develop/examples/configs/llm/hf_pipeline_dolly/README.md) configuration.
 
 To use streaming for HF Pipeline LLMs, you need to create an `nemoguardrails.llm.providers.huggingface.AsyncTextIteratorStreamer` streamer object,
 add it to the `kwargs` of the pipeline and to the `model_kwargs` of the `HuggingFacePipelineCompatible` object.

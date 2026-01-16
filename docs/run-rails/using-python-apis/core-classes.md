@@ -1,25 +1,26 @@
 ---
 title:
-  page: "NeMo Guardrails Library Core Classes"
+  page: "Core Classes Reference"
   nav: "Core Classes"
-description: "Load guardrails configurations with RailsConfig and generate responses with LLMRails."
-topics: ["AI Safety", "LLM Guardrails"]
-tags: ["Python", "SDK", "RailsConfig", "LLMRails", "API"]
+description: "RailsConfig and LLMRails class reference for loading and running guardrails."
+keywords: ["RailsConfig", "LLMRails", "from_path", "from_content", "generate", "generate_async"]
+topics: ["generative_ai", "developer_tools"]
+tags: ["llms", "ai_inference", "ai_platforms"]
 content:
-  type: "Reference"
-  difficulty: "Intermediate"
-  audience: ["Developer", "AI Engineer"]
+  type: reference
+  difficulty: technical_intermediate
+  audience: ["data_scientist", "engineer"]
 ---
 
-# NeMo Guardrails Library Core Classes
+# Core Classes of the NeMo Guardrails Library
 
 This guide covers the two fundamental classes in the NeMo Guardrails library: `RailsConfig` for loading configurations and `LLMRails` for generating responses with guardrails.
 
 ## RailsConfig
 
-The `RailsConfig` class represents a complete guardrails configuration, including models, rails, flows, prompts, and other settings.
+The `RailsConfig` class represents a complete guardrails configuration, including models, rails, flows, prompts, and other settings. This class requires to load the configuration from a directory or a single file you created in the previous chapter [](../../configure-rails/index.md).
 
-### Loading from a Directory
+### Loading Configuration from a Directory
 
 The most common way to load a configuration is from a directory containing `config.yml` and Colang files:
 
@@ -117,9 +118,9 @@ combined_config = base_config + additional_config
 
 This is useful for:
 
-- Adding rails to a base configuration
-- Layering environment-specific settings
-- Combining shared and application-specific configurations
+- Adding rails to a base configuration.
+- Layering environment-specific settings.
+- Combining shared and application-specific configurations.
 
 ### Key Configuration Properties
 
@@ -238,7 +239,7 @@ async def check_permissions(context: Optional[dict] = None):
     return user_role == "admin"
 ```
 
-For detailed information about context variables, see [Action Parameters](../configuration-guide/actions/action-parameters.md#the-context-parameter) and [Colang Variables](../configuration-guide/colang/colang-1/colang-language-syntax-guide.md#variables).
+For detailed information about context variables, see [](../../configure-rails/actions/action-parameters.md#the-context-parameter) and [](../../configure-rails/colang/colang-1/colang-language-syntax-guide.md#variables).
 
 ### Asynchronous Generation
 
@@ -275,7 +276,7 @@ async def stream_response():
         print(chunk, end="", flush=True)
 ```
 
-For detailed streaming configuration, refer to [Streaming](streaming.md).
+For detailed streaming configuration, refer to [](streaming.md).
 
 ### Event-based Generation
 
@@ -294,7 +295,7 @@ for event in events:
         print(f"Bot says: {event['script']}")
 ```
 
-For detailed event-based API usage, refer to [Event-based API](event-based-api.md).
+For detailed event-based API usage, refer to [](event-based-api.md).
 
 ### Generation Options
 
@@ -314,7 +315,7 @@ response = rails.generate(
 )
 ```
 
-For detailed options, refer to [Generation Options](generation-options.md).
+For detailed options, refer to [](generation-options.md).
 
 ---
 
@@ -336,7 +337,7 @@ rails = LLMRails(config)
 rails.register_action(get_weather, name="get_weather")
 ```
 
-For detailed action registration, refer to [Actions Guide](../configuration-guide/actions/index.md).
+For detailed action registration, refer to [](../../configure-rails/actions/index.md).
 
 ---
 
@@ -431,8 +432,8 @@ asyncio.run(main())
 
 ## Related Resources
 
-- [Generation Options](generation-options.md) - Fine-grained control over generation
-- [Streaming](streaming.md) - Real-time token streaming
-- [Event-based API](event-based-api.md) - Low-level event control
-- [Tools Integration](tools-integration.md) - Integrating LangChain tools
-- [Configuration Guide](../configuration-guide/index.md) - Complete configuration reference
+- [](generation-options.md) - Fine-grained control over generation
+- [](streaming.md) - Real-time token streaming
+- [](event-based-api.md) - Low-level event control
+- [](tools-integration.md) - Integrating LangChain tools
+- [](../../configure-rails/index.md) - Complete configuration reference
