@@ -404,7 +404,7 @@ tqdm==4.67.1
     #   sentence-transformers
     #   spacy
     #   transformers
-transformers==4.57.1
+transformers==4.57.6
     # via sentence-transformers
 typer==0.19.2
     # via
