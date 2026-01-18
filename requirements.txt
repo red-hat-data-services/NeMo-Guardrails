@@ -375,7 +375,7 @@ srsly==2.5.1
     #   spacy
     #   thinc
     #   weasel
-starlette==0.50.0
+starlette==0.52.1
     # via
     #   nemoguardrails (pyproject.toml)
     #   fastapi
