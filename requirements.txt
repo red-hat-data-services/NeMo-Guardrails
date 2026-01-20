@@ -101,7 +101,7 @@ httpx==0.28.1
     #   nemoguardrails (pyproject.toml)
     #   langsmith
     #   openai
-httpx-sse==0.4.1
+httpx-sse==0.4.3
     # via langchain-community
 huggingface-hub==0.35.1
     # via
