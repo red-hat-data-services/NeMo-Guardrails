@@ -9,6 +9,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 >
 > The changes related to the Colang language and runtime have moved to [CHANGELOG-Colang](./CHANGELOG-Colang.md) file.
 
+## [0.20.0] - 2026-01-22
+
+### 🚀 Features
+
+- *(llm)* Propagate model and base URL in LLMCallException; improve error handling ([#1502](https://github.com/NVIDIA-NeMo/Guardrails/issues/1502))
+- *(content_safety)* Add support to auto select multilingual refusal bot messages ([#1530](https://github.com/NVIDIA-NeMo/Guardrails/issues/1530))
+- *(library)* Adding GLiNER for PII detection (open alternative to PrivateAI) ([#1545](https://github.com/NVIDIA-NeMo/Guardrails/issues/1545))
+- *(benchmark)* Implement Mock LLM streaming ([#1564](https://github.com/NVIDIA-NeMo/Guardrails/issues/1564))
+- *(library)* Add reasoning guardrail connector ([#1565](https://github.com/NVIDIA-NeMo/Guardrails/issues/1565))
+
+### 🐛 Bug Fixes
+
+- *(models)* Surface relevant exception when initializing langchain model ([#1516](https://github.com/NVIDIA-NeMo/Guardrails/issues/1516))
+- *(llm)* Filter temperature parameter for OpenAI reasoning models ([#1526](https://github.com/NVIDIA-NeMo/Guardrails/issues/1526))
+- *(bot-thinking)* Tackle bug with reasoning trace leak across llm calls ([#1582](https://github.com/NVIDIA-NeMo/Guardrails/issues/1582))
+- *(providers)* Handle langchain 1.2.1 dict type for _SUPPORTED_PROVIDERS ([#1589](https://github.com/NVIDIA-NeMo/Guardrails/issues/1589))
+
+### 🚜 Refactor
+
+- *(streaming)* [**breaking**] Drop streaming field from config ([#1538](https://github.com/NVIDIA-NeMo/Guardrails/issues/1538))
+
+### ⚙️ Miscellaneous Tasks
+
+- *(test)* Reduce default pytest log level from DEBUG to WARNING ([#1523](https://github.com/NVIDIA-NeMo/Guardrails/issues/1523))
+- *(docker)* Upgrade to Python 3.12-slim base image ([#1522](https://github.com/NVIDIA-NeMo/Guardrails/issues/1522))
+- Run pre-commits to update license date for 2026 ([#1562](https://github.com/NVIDIA-NeMo/Guardrails/issues/1562))
+- Move Benchmark code to top-level ([#1559](https://github.com/NVIDIA-NeMo/Guardrails/issues/1559))
+- Update repo to <https://github.com/NVIDIA-NeMo/Guardrails> ([#1594](https://github.com/NVIDIA-NeMo/Guardrails/issues/1594))
+
 ## [0.19.0] - 2025-12-03
 
 ### 🚀 Features
