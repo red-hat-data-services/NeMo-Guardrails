@@ -112,12 +112,17 @@ class TestConvertToMessages:
         ]
         result = Guardrails._convert_to_messages(messages=messages)
 
-        expected = [
-            {"role": "user", "content": "What is AI?"},
-            {"role": "assistant", "content": "AI is artificial intelligence."},
-            {"role": "user", "content": "Tell me more."},
+        assert result == messages
+
+    def test_messages_with_system_message(self):
+        """Test conversion with system message."""
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Hello!"},
         ]
-        assert result == expected
+        result = Guardrails._convert_to_messages(messages=messages)
+
+        assert result == messages
 
     def test_empty_messages_list(self):
         """Test conversion with empty messages list raises ValueError."""
@@ -126,14 +131,11 @@ class TestConvertToMessages:
         with pytest.raises(ValueError, match="Neither prompt nor messages provided"):
             Guardrails._convert_to_messages(messages=messages)
 
-    def test_prompt_takes_priority_over_messages(self):
+    def test_messages_take_priority_over_prompt(self):
         """Test that messages parameter takes priority when both are provided."""
         messages = [{"role": "user", "content": "From messages"}]
         result = Guardrails._convert_to_messages(prompt="From prompt", messages=messages)
-
-        # Messages should take priority
-        expected = [{"role": "user", "content": "From messages"}]
-        assert result == expected
+        assert result == messages
 
     def test_neither_prompt_nor_messages_raises_error(self):
         """Test that providing neither prompt nor messages raises ValueError."""
@@ -191,14 +193,7 @@ class TestGenerate:
             {"role": "user", "content": "Tell me more."},
         ]
         result = guardrails.generate(messages=messages)
-
-        # Verify generate was called with converted messages
-        expected_messages = [
-            {"role": "user", "content": "What is AI?"},
-            {"role": "assistant", "content": "AI is artificial intelligence."},
-            {"role": "user", "content": "Tell me more."},
-        ]
-        mock_llmrails_instance.generate.assert_called_once_with(messages=expected_messages)
+        mock_llmrails_instance.generate.assert_called_once_with(messages=messages)
         assert result == "Response to conversation"
 
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
@@ -289,61 +284,61 @@ class TestGenerateAsync:
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_generate_async_with_string_prompt(self, mock_llmrails_class, mock_rails_config):
-        """Test generate_async method with a string prompt."""
+        """Test generate_async method with a string prompt using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
         mock_llmrails_instance.generate_async = AsyncMock(return_value="Async response")
 
-        guardrails = Guardrails(config=mock_rails_config)
-        result = await guardrails.generate_async(prompt="Hello async!")
+        async with Guardrails(config=mock_rails_config) as guardrails:
+            result = await guardrails.generate_async(prompt="Hello async!")
 
-        # Verify generate_async was called with correct messages
-        expected_messages = [{"role": "user", "content": "Hello async!"}]
-        mock_llmrails_instance.generate_async.assert_awaited_once_with(messages=expected_messages)
-        assert result == "Async response"
+            # Verify generate_async was called with correct messages
+            expected_messages = [{"role": "user", "content": "Hello async!"}]
+            mock_llmrails_instance.generate_async.assert_awaited_once_with(messages=expected_messages)
+            assert result == "Async response"
 
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_generate_async_with_messages(self, mock_llmrails_class, mock_rails_config):
-        """Test generate_async method with a list of messages."""
+        """Test generate_async method with a list of messages using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
         mock_llmrails_instance.generate_async = AsyncMock(return_value="Async conversation response")
 
-        guardrails = Guardrails(config=mock_rails_config)
-        messages = [
-            {"role": "user", "content": "First message"},
-            {"role": "assistant", "content": "First response"},
-            {"role": "user", "content": "Second message"},
-        ]
-        result = await guardrails.generate_async(messages=messages)
+        async with Guardrails(config=mock_rails_config) as guardrails:
+            messages = [
+                {"role": "user", "content": "First message"},
+                {"role": "assistant", "content": "First response"},
+                {"role": "user", "content": "Second message"},
+            ]
+            result = await guardrails.generate_async(messages=messages)
 
-        # Verify generate_async was called with converted messages
-        expected_messages = [
-            {"role": "user", "content": "First message"},
-            {"role": "assistant", "content": "First response"},
-            {"role": "user", "content": "Second message"},
-        ]
-        mock_llmrails_instance.generate_async.assert_awaited_once_with(messages=expected_messages)
-        assert result == "Async conversation response"
+            # Verify generate_async was called with converted messages
+            expected_messages = [
+                {"role": "user", "content": "First message"},
+                {"role": "assistant", "content": "First response"},
+                {"role": "user", "content": "Second message"},
+            ]
+            mock_llmrails_instance.generate_async.assert_awaited_once_with(messages=expected_messages)
+            assert result == "Async conversation response"
 
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_generate_async_with_kwargs(self, mock_llmrails_class, mock_rails_config):
-        """Test generate_async method with additional kwargs."""
+        """Test generate_async method with additional kwargs using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
         mock_llmrails_instance.generate_async = AsyncMock(return_value="Response")
 
-        guardrails = Guardrails(config=mock_rails_config)
-        result = await guardrails.generate_async(prompt="Test", temperature=0.5, top_p=0.9)
+        async with Guardrails(config=mock_rails_config) as guardrails:
+            result = await guardrails.generate_async(prompt="Test", temperature=0.5, top_p=0.9)
 
-        # Verify kwargs were passed through
-        expected_messages = [{"role": "user", "content": "Test"}]
-        mock_llmrails_instance.generate_async.assert_awaited_once_with(
-            messages=expected_messages, temperature=0.5, top_p=0.9
-        )
-        assert result == "Response"
+            # Verify kwargs were passed through
+            expected_messages = [{"role": "user", "content": "Test"}]
+            mock_llmrails_instance.generate_async.assert_awaited_once_with(
+                messages=expected_messages, temperature=0.5, top_p=0.9
+            )
+            assert result == "Response"
 
 
 class TestStreamAsync:
@@ -352,7 +347,7 @@ class TestStreamAsync:
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_stream_async_with_string_prompt(self, mock_llmrails_class, mock_rails_config):
-        """Test stream_async method with a string prompt."""
+        """Test stream_async method with a string prompt using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
 
@@ -365,8 +360,6 @@ class TestStreamAsync:
         mock_llmrails_instance.stream_async.return_value = mock_stream()
 
         guardrails = Guardrails(config=mock_rails_config)
-
-        # Collect all chunks
         chunks = []
         async for chunk in guardrails.stream_async(prompt="Stream this"):
             chunks.append(chunk)
@@ -379,7 +372,7 @@ class TestStreamAsync:
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_stream_async_with_messages(self, mock_llmrails_class, mock_rails_config):
-        """Test stream_async method with a list of messages."""
+        """Test stream_async method with a list of messages using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
 
@@ -412,7 +405,7 @@ class TestStreamAsync:
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_stream_async_with_kwargs(self, mock_llmrails_class, mock_rails_config):
-        """Test stream_async method with additional kwargs."""
+        """Test stream_async method with additional kwargs using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
 
@@ -422,7 +415,6 @@ class TestStreamAsync:
         mock_llmrails_instance.stream_async.return_value = mock_stream()
 
         guardrails = Guardrails(config=mock_rails_config)
-
         chunks = []
         async for chunk in guardrails.stream_async(prompt="Test", temperature=0.8):
             chunks.append(chunk)
@@ -434,33 +426,34 @@ class TestStreamAsync:
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_stream_async_dict_chunks(self, mock_llmrails_class, mock_rails_config):
-        """Test stream_async when it yields dict chunks."""
+        """Test stream_async when it yields dict chunks using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
 
-        async def mock_stream():
-            yield {"type": "start", "data": "beginning"}
-            yield {"type": "content", "data": "middle"}
-            yield {"type": "end", "data": "finish"}
-
-        mock_llmrails_instance.stream_async.return_value = mock_stream()
-
-        guardrails = Guardrails(config=mock_rails_config)
-
-        chunks = []
-        async for chunk in guardrails.stream_async(prompt="Stream dict"):
-            chunks.append(chunk)
-
-        assert chunks == [
+        return_chunks = [
             {"type": "start", "data": "beginning"},
             {"type": "content", "data": "middle"},
             {"type": "end", "data": "finish"},
         ]
 
+        async def mock_stream():
+            yield return_chunks[0]
+            yield return_chunks[1]
+            yield return_chunks[2]
+
+        mock_llmrails_instance.stream_async.return_value = mock_stream()
+
+        guardrails = Guardrails(config=mock_rails_config)
+        chunks = []
+        async for chunk in guardrails.stream_async(prompt="Stream dict"):
+            chunks.append(chunk)
+
+        assert chunks == return_chunks
+
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_stream_async_empty_stream(self, mock_llmrails_class, mock_rails_config):
-        """Test stream_async when stream is empty."""
+        """Test stream_async when stream is empty using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
 
@@ -472,7 +465,6 @@ class TestStreamAsync:
         mock_llmrails_instance.stream_async.return_value = mock_stream()
 
         guardrails = Guardrails(config=mock_rails_config)
-
         chunks = []
         async for chunk in guardrails.stream_async(prompt="Empty stream"):
             chunks.append(chunk)
@@ -482,7 +474,7 @@ class TestStreamAsync:
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_stream_async_single_chunk(self, mock_llmrails_class, mock_rails_config):
-        """Test stream_async with a single chunk."""
+        """Test stream_async with a single chunk using context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
 
@@ -492,7 +484,6 @@ class TestStreamAsync:
         mock_llmrails_instance.stream_async.return_value = mock_stream()
 
         guardrails = Guardrails(config=mock_rails_config)
-
         chunks = []
         async for chunk in guardrails.stream_async(prompt="Single chunk test"):
             chunks.append(chunk)
@@ -507,11 +498,9 @@ class TestStreamAsync:
         mock_llmrails_class.return_value = mock_llmrails_instance
 
         guardrails = Guardrails(config=mock_rails_config)
-
         with pytest.raises(ValueError, match="Neither prompt nor messages provided"):
-            # Need to iterate to trigger the error
-            async for _ in guardrails.stream_async():
-                pass
+            # Error raised during stream creation, before iteration
+            guardrails.stream_async()
 
 
 class TestIntegration:
@@ -520,21 +509,20 @@ class TestIntegration:
     @pytest.mark.asyncio
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     async def test_multiple_calls_same_instance(self, mock_llmrails_class, mock_rails_config):
-        """Test that the same Guardrails instance can be used for multiple calls."""
+        """Test that the same Guardrails instance can be used for multiple calls with context manager."""
         mock_llmrails_instance = MagicMock()
         mock_llmrails_class.return_value = mock_llmrails_instance
         mock_llmrails_instance.generate_async = AsyncMock(side_effect=["Response 1", "Response 2", "Response 3"])
 
-        guardrails = Guardrails(config=mock_rails_config)
+        async with Guardrails(config=mock_rails_config) as guardrails:
+            result1 = await guardrails.generate_async(prompt="First call")
+            result2 = await guardrails.generate_async(prompt="Second call")
+            result3 = await guardrails.generate_async(prompt="Third call")
 
-        result1 = await guardrails.generate_async(prompt="First call")
-        result2 = await guardrails.generate_async(prompt="Second call")
-        result3 = await guardrails.generate_async(prompt="Third call")
-
-        assert result1 == "Response 1"
-        assert result2 == "Response 2"
-        assert result3 == "Response 3"
-        assert mock_llmrails_instance.generate_async.await_count == 3
+            assert result1 == "Response 1"
+            assert result2 == "Response 2"
+            assert result3 == "Response 3"
+            assert mock_llmrails_instance.generate_async.await_count == 3
 
     @patch("nemoguardrails.guardrails.guardrails.LLMRails")
     def test_with_custom_llm_initialization(self, mock_llmrails_class, mock_rails_config, mock_llm):

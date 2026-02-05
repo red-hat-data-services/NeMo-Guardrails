@@ -20,15 +20,23 @@ NeMo Guardrails. The Guardrails class wraps the LLMRails functionality and provi
 a streamlined API for generating LLM responses with programmable guardrails.
 """
 
+import logging
 from enum import Enum
 from typing import AsyncIterator, Optional, Tuple, TypeAlias, Union, overload
 
 from langchain_core.language_models import BaseChatModel, BaseLLM
 
+from nemoguardrails.guardrails.async_work_queue import AsyncWorkQueue
 from nemoguardrails.logging.explain import ExplainInfo
 from nemoguardrails.rails.llm.config import RailsConfig
 from nemoguardrails.rails.llm.llmrails import LLMRails
 from nemoguardrails.rails.llm.options import GenerationResponse
+
+# Queue configuration constants
+MAX_QUEUE_SIZE = 100
+MAX_CONCURRENCY = 10
+
+log = logging.getLogger(__name__)
 
 
 class MessageRole(str, Enum):
@@ -61,6 +69,17 @@ class Guardrails:
         self.verbose = verbose
 
         self.llmrails = LLMRails(config, llm, verbose)
+
+        # Async work queue for managing concurrent generate_async requests
+        self._generate_async_queue: AsyncWorkQueue = AsyncWorkQueue(
+            name="generate_async_queue",
+            max_queue_size=MAX_QUEUE_SIZE,
+            max_concurrency=MAX_CONCURRENCY,
+            reject_on_full=True,
+        )
+
+        # List of all queues for lifecycle management
+        self._queues = [self._generate_async_queue]
 
     @staticmethod
     def _convert_to_messages(prompt: str | None = None, messages: LLMMessages | None = None) -> LLMMessages:
@@ -113,7 +132,9 @@ class Guardrails:
         """Generate an LLM response asynchronously with guardrails applied."""
 
         messages = self._convert_to_messages(prompt, messages)
-        response = await self.llmrails.generate_async(messages=messages, **kwargs)
+
+        # Submit to work queue for concurrency control
+        response = await self._generate_async_queue.submit(self.llmrails.generate_async, messages=messages, **kwargs)
         return response
 
     def stream_async(
@@ -132,3 +153,22 @@ class Guardrails:
         """Replace the main LLM with a new one."""
         self.llm = llm
         self.llmrails.update_llm(llm)
+
+    async def startup(self) -> None:
+        """Lifecycle method to create worker threads and infrastructure"""
+        for queue in self._queues:
+            await queue.start()
+
+    async def shutdown(self) -> None:
+        """Lifecycle method to cleanly shutdown worker threads and infrastructure"""
+        for queue in self._queues:
+            await queue.stop()
+
+    async def __aenter__(self):
+        """Async context manager entry - starts the queues."""
+        await self.startup()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit - shuts down the queues."""
+        await self.shutdown()
