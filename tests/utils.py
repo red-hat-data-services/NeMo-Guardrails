@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -98,19 +98,39 @@ class FakeLLM(LLM):
 
         self.i += 1
 
-        if self.streaming and run_manager:
-            # To mock streaming, we just split in chunk by spaces
-            chunks = response.split(" ")
-            for i in range(len(chunks)):
-                if i < len(chunks) - 1:
-                    chunk = chunks[i] + " "
-                else:
-                    chunk = chunks[i]
-
-                await asyncio.sleep(0.05)
-                await run_manager.on_llm_new_token(token=chunk, chunk=chunk)
-
         return response
+
+    async def _astream(
+        self,
+        prompt: str,
+        stop: Optional[List[str]] = None,
+        run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        **kwargs: Any,
+    ):
+        from langchain_core.outputs import GenerationChunk
+
+        if self.i >= len(self.responses):
+            raise RuntimeError(
+                f"No responses available for query number {self.i + 1} in FakeLLM. "
+                "Most likely, too many LLM calls are made or additional responses need to be provided."
+            )
+
+        response = self.responses[self.i]
+        self.i += 1
+
+        if self.exception:
+            raise self.exception
+
+        # To mock streaming, we just split in chunk by spaces
+        chunks = response.split(" ")
+        for i in range(len(chunks)):
+            if i < len(chunks) - 1:
+                chunk = chunks[i] + " "
+            else:
+                chunk = chunks[i]
+
+            await asyncio.sleep(0.05)
+            yield GenerationChunk(text=chunk)
 
     def _get_token_usage_for_response(self, response_index: int, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """Get token usage data for the given response index if conditions are met."""
@@ -188,13 +208,10 @@ class TestChat:
         """
         self.llm = None
         if llm_completions is not None:
-            # check if we should simulate stream_usage=True behavior
-            # this mirrors the logic in LLMRails._prepare_model_kwargs
-            should_enable_stream_usage = False
-            if config.streaming:
-                main_model = next((model for model in config.models if model.type == "main"), None)
-                if main_model and main_model.engine in _TEST_PROVIDERS_WITH_TOKEN_USAGE_SUPPORT:
-                    should_enable_stream_usage = True
+            main_model = next((model for model in config.models if model.type == "main"), None)
+            should_enable_stream_usage = bool(
+                main_model and main_model.engine in _TEST_PROVIDERS_WITH_TOKEN_USAGE_SUPPORT
+            )
 
             self.llm = FakeLLM(
                 responses=llm_completions,
