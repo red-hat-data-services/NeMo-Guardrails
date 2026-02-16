@@ -3,7 +3,10 @@ FROM registry.access.redhat.com/ubi9/python-312@sha256:bcdbab62d80f7dd88b4c2ce69
 USER 0
 WORKDIR /app
 
-RUN dnf install -y gcc-c++ python3-devel && dnf clean all
+RUN rm -f /etc/yum.repos.d/*.repo && \
+    . /cachi2/cachi2.env && \
+    dnf install -y gcc-c++ python3-devel && \
+    dnf clean all
 
 ARG GUARDRAILS_PROFILE=opensource
 
