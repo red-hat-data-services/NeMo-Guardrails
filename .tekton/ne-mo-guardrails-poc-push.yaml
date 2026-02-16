@@ -24,6 +24,8 @@ spec:
     value: '{{revision}}'
   - name: output-image
     value: quay.io/redhat-user-workloads/rhoai-tenant/ne-mo-guardrails-poc:{{revision}}
+  - name: rhoai-version
+    value: "3.4.0-ea.1"
   - name: dockerfile
     value: Dockerfile.konflux
   - name: path-context
