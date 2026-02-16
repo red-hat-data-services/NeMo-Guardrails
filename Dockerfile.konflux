@@ -3,7 +3,8 @@ FROM registry.access.redhat.com/ubi9/python-312@sha256:bcdbab62d80f7dd88b4c2ce69
 USER 0
 WORKDIR /app
 
-RUN rm -f /etc/yum.repos.d/*.repo && \
+# Use 'find' to delete all .repo files EXCEPT 'cachi2.repo'
+RUN find /etc/yum.repos.d/ -name "*.repo" ! -name "cachi2.repo" -delete && \
     . /cachi2/cachi2.env && \
     dnf install -y gcc-c++ python3-devel && \
     dnf clean all
