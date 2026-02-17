@@ -52,6 +52,17 @@ spec:
   timeouts:
     pipeline: 4h
     tasks: 2h
+  taskRunSpecs:
+    - pipelineTaskName: build-images
+      stepSpecs:
+        - name: build
+          computeResources:
+            requests:
+              cpu: '8'
+              memory: 16Gi
+            limits:
+              cpu: '16'
+              memory: 32Gi
   pipelineRef:
     resolver: git
     params:
