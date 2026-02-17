@@ -49,9 +49,6 @@ spec:
           {"type": "generic", "path": "."},
           {"type": "rpm", "path": "."}
         ]
-  timeouts:
-    pipeline: 4h
-    tasks: 2h
   taskRunSpecs:
     - pipelineTaskName: build-images
       stepSpecs:
@@ -63,6 +60,9 @@ spec:
             limits:
               cpu: '16'
               memory: 32Gi
+  timeouts:
+    pipeline: 4h
+    tasks: 2h
   pipelineRef:
     resolver: git
     params:
