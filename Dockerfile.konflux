@@ -133,6 +133,7 @@ FROM registry.access.redhat.com/ubi9/python-312@sha256:bcdbab62d80f7dd88b4c2ce69
 
 USER 0
 WORKDIR /app
+
 ARG TARGETARCH
 
 ARG GUARDRAILS_PROFILE=opensource
