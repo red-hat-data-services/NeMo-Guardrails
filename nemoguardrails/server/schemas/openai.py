@@ -108,6 +108,10 @@ class GuardrailsDataInput(BaseModel):
         description="List of configuration IDs to combine.",
         validate_default=True,
     )
+    config: Optional[dict] = Field(
+        default=None,
+        description="Inline guardrails configuration to use instead of config_id.",
+    )
     thread_id: Optional[str] = Field(
         default=None,
         min_length=16,
@@ -131,8 +135,10 @@ class GuardrailsDataInput(BaseModel):
     @classmethod
     def validate_config_ids(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            if data.get("config_id") is not None and data.get("config_ids") is not None:
-                raise ValueError("Only one of config_id or config_ids should be specified")
+            config_fields = [data.get("config_id"), data.get("config_ids"), data.get("config")]
+            non_none_count = sum(1 for field in config_fields if field is not None)
+            if non_none_count > 1:
+                raise ValueError("Only one of config, config_id, or config_ids should be specified")
         return data
 
     @field_validator("config_ids", mode="before")
@@ -149,4 +155,42 @@ class GuardrailsChatCompletionRequest(OpenAIChatCompletionRequest):
     guardrails: GuardrailsDataInput = Field(
         default_factory=GuardrailsDataInput,
         description="Guardrails specific options for the request.",
+    )
+
+
+class RailStatus(BaseModel):
+    """Status of a single rail execution."""
+
+    status: str = Field(description="Status of the rail: 'success' or 'blocked'.")
+
+
+class MessageCheckResult(BaseModel):
+    """Per-message guardrail check result."""
+
+    index: int = Field(description="Index of the message in the request.")
+    role: str = Field(description="Role of the message (user/assistant/tool).")
+    rails: dict[str, RailStatus] = Field(
+        default_factory=dict,
+        description="Rails that were evaluated for this message and their statuses.",
+    )
+
+
+class GuardrailCheckResponse(BaseModel):
+    """Response body for the /v1/guardrail/checks endpoint."""
+
+    status: str = Field(
+        description="Overall status: 'success' if all rails passed, 'blocked' if any rail blocked, 'error' for system errors."
+    )
+    rails_status: dict[str, RailStatus] = Field(
+        default_factory=dict,
+        description="Status of each individual rail that was executed (aggregated across all messages).",
+    )
+    messages: List[MessageCheckResult] = Field(
+        default_factory=list,
+        description="Per-message guardrail check results showing which rails were evaluated for each message. "
+        "This is a NeMo extension beyond the base OpenAPI spec for enhanced debugging and visibility.",
+    )
+    guardrails_data: Optional[dict] = Field(
+        default=None,
+        description="Additional data from guardrail execution including logs and statistics.",
     )
