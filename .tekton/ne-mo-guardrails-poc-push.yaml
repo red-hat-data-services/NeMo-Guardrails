@@ -40,7 +40,7 @@ spec:
     - linux-m2xlarge/arm64
     - linux/ppc64le
   - name: prefetch-input
-      value: |
+    value: |
         [
           {
             "type": "pip",
@@ -71,4 +71,3 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 status: {}
-#restart
