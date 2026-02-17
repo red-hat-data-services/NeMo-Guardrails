@@ -57,6 +57,9 @@ spec:
            "path": "."
          }
        ]
+          # ADD THIS PARAMETER:
+  - name: mode
+    value: "permissive"
   timeouts:
     pipeline: 4h
     tasks: 2h
