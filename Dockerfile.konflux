@@ -3,10 +3,8 @@ FROM registry.access.redhat.com/ubi9/python-312@sha256:bcdbab62d80f7dd88b4c2ce69
 USER 0
 WORKDIR /app
 
-# 1. Remove specific default repo files (ubi.repo, redhat.repo, etc.)
-# 2. Source the environment
-# 3. Install packages
-RUN rm -f /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/redhat.repo && \
+# Remove online repos explicitly, preserving the injected hermeto/cachi2 repo
+RUN rm -f /etc/yum.repos.d/ubi*.repo /etc/yum.repos.d/redhat.repo && \
     . /cachi2/cachi2.env && \
     dnf install -y gcc-c++ python3-devel && \
     dnf clean all
