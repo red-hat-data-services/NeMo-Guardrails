@@ -133,8 +133,8 @@ FROM registry.access.redhat.com/ubi9/python-312@sha256:bcdbab62d80f7dd88b4c2ce69
 
 USER 0
 WORKDIR /app
-
 ARG TARGETARCH
+
 ARG GUARDRAILS_PROFILE=opensource
 ENV LD_LIBRARY_PATH=/usr/local/lib64:/usr/local/lib:/usr/lib64:/usr/lib:/app/.openblas/lib
 ENV PKG_CONFIG_PATH=/usr/local/lib/pkgconfig/:/app/.openblas/lib/pkgconfig
