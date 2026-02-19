@@ -371,7 +371,8 @@ class LLMRails:
         Returns:
             dict: The prepared kwargs for model initialization
         """
-        kwargs = model_config.parameters or {}
+        # Make a copy to avoid modifying the original model config
+        kwargs = dict(model_config.parameters) if model_config.parameters else {}
 
         # If the optional API Key Environment Variable is set, add it to kwargs
         if model_config.api_key_env_var:
@@ -651,7 +652,9 @@ class LLMRails:
                                 user_message = prev_msg["content"]
                                 break
 
-                        if user_message:
+                        # If tool input rails are configured, process tool messages even without user message
+                        # This allows standalone tool message validation (e.g., in MCP gateway scenarios)
+                        if user_message or self.config.rails.tool_input.flows:
                             # If tool input rails are configured, group all tool messages
                             if self.config.rails.tool_input.flows:
                                 # Collect all tool messages for grouped processing
