@@ -41,29 +41,28 @@ spec:
     - linux/x86_64
     - linux-m2xlarge/arm64
     - linux/ppc64le
- - name: prefetch-mode
-   value: "permissive"
- - name: prefetch-input
-    value: |
-      [
-        {
-          "type": "pip",
-          "path": ".",
-          "requirements_files": [
-            "requirements.txt",
-            "requirements-torch.txt"
-          ],
-          "allow_binary": true,
-          "binary": {
-            "os": "linux"
-          }
-        },
-        {
-          "type": "generic",
-          "path": "."
-        }
-      ]
-
+  - name: prefetch-mode
+    value: "permissive"
+  - name: prefetch-input
+     value: |
+       [
+         {
+           "type": "pip",
+           "path": ".",
+           "requirements_files": [
+             "requirements.txt",
+             "requirements-torch.txt"
+           ],
+           "allow_binary": true,
+           "binary": {
+             "os": "linux"
+           }
+         },
+         {
+           "type": "generic",
+           "path": "."
+         }
+       ]
   - name: hermetic
     value: true
   - name: enable-slack-failure-notification
