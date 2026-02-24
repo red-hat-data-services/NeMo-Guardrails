@@ -57,10 +57,7 @@ spec:
           "requirements_build_files": [
             "requirements-build.txt"
           ],
-          "allow_binary": true,
-          "binary": {
-            "os": "linux"
-          }
+          "binary": {}
         },
         {
           "type": "generic",
