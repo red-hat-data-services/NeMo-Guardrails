@@ -4,5 +4,11 @@
 #
 #    pybuild-deps compile --output-file=requirements-build.txt requirements-hack.txt
 #
+flit-core==3.12.0
+    # via wheel
 nose==1.3.7
     # via annoy
+
+# The following packages are considered to be unsafe in a requirements file:
+setuptools==80.9.0
+    # via greenlet
