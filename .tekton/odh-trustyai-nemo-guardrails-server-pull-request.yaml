@@ -10,6 +10,7 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-comment: "^/build-konflux"
     pipelinesascode.tekton.dev/on-event: "[pull_request]"
+    pipelinesascode.tekton.dev/on-target-branch: "[{{target_branch}}]"
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: automation
@@ -38,8 +39,8 @@ spec:
     value: Dockerfile.konflux
   - name: build-platforms
     value:
-    - linux/x86_64
-    - linux-m2xlarge/arm64
+    # - linux/x86_64
+    # - linux-m2xlarge/arm64
     - linux/ppc64le
   - name: prefetch-input
     value: |
