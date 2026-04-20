@@ -48,6 +48,8 @@ spec:
     value: false
   - name: enable-slack-failure-notification
     value: "false"
+  - name: rhoai-version
+    value: "3.4.0-ea.2"
   - name: path-context
     value: .
   timeouts:
