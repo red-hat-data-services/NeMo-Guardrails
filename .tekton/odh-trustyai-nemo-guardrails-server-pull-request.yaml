@@ -56,8 +56,7 @@ spec:
           "requirements_build_files": [
             "ppc64le-requirements/requirements-sdist-build.txt"
           ],
-          "allow_binary": "true",
-          "skip_cargo_vendor": "true"
+          "allow_binary": "true"
         },
         {
           "type": "rpm",
