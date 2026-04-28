@@ -1,0 +1,9 @@
+arches:
+  - ppc64le
+contentOrigin:
+  repofiles:
+    - ubi.repo
+packages:
+  - unzip
+context:
+  containerfile: Dockerfile.konflux
