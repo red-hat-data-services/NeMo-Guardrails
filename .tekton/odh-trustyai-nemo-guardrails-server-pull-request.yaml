@@ -3,9 +3,9 @@ kind: PipelineRun
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/NeMo-Guardrails?rev={{revision}}
-    build.appstudio.redhat.com/commit_sha: '{{revision}}'
-    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
-    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    build.appstudio.redhat.com/commit_sha: "{{revision}}"
+    build.appstudio.redhat.com/pull_request_number: "{{pull_request_number}}"
+    build.appstudio.redhat.com/target_branch: "{{target_branch}}"
     pipelinesascode.tekton.dev/cancel-in-progress: "true"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-comment: "^/build-konflux"
@@ -45,28 +45,28 @@ spec:
     - linux/ppc64le
   - name: prefetch-input
     value: |
-    [
-      {
-        "type": "pip",
-        "path": ".",
-        "requirements_files": [
-          "ppc64le-requirements/requirements-rhoai-3.4-index.txt",
-          "ppc64le-requirements/requirements.txt"
-        ],
-        "requirements_build_files": [
-          "ppc64le-requirements/requirements-sdist-build.txt"
-        ],
-        "allow_binary": "true"
-      },
-      {
-        "type": "rpm",
-        "path": "."
-      },
-      {
-        "type": "generic",
-        "path": "."
-      }
-    ]
+      [
+        {
+          "type": "pip",
+          "path": ".",
+          "requirements_files": [
+            "ppc64le-requirements/requirements-rhoai-3.4-index.txt",
+            "ppc64le-requirements/requirements.txt"
+          ],
+          "requirements_build_files": [
+            "ppc64le-requirements/requirements-sdist-build.txt"
+          ],
+          "allow_binary": "true"
+        },
+        {
+          "type": "rpm",
+          "path": "."
+        },
+        {
+          "type": "generic",
+          "path": "."
+        }
+      ]
   - name: hermetic
     value: true
   - name: enable-slack-failure-notification
