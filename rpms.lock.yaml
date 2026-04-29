@@ -3,6 +3,11 @@ lockfileVersion: 1
 lockfileVendor: redhat
 arches:
   - arch: ppc64le
-    packages: []
+    packages:
+      - name: unzip
+        epoch: 0
+        version: "6.0"
+        release: "57.el9"
+        arch: ppc64le
     source: []
     module_metadata: []
