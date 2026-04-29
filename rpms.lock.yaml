@@ -2,12 +2,20 @@
 lockfileVersion: 1
 lockfileVendor: redhat
 arches:
-  - arch: ppc64le
-    packages:
-      - name: unzip
-        epoch: 0
-        version: "6.0"
-        release: "57.el9"
-        arch: ppc64le
-    source: []
-    module_metadata: []
+- arch: ppc64le
+  packages:
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/u/unzip-6.0-59.el9.ppc64le.rpm
+    repoid: ubi-9-for-ppc64le-baseos-rpms
+    size: 190400
+    checksum: sha256:08da7102308f1ad028360ccdf78d0de9c3ff16c9cdb2aab71d7182f600f933be
+    name: unzip
+    evr: 6.0-59.el9
+    sourcerpm: unzip-6.0-59.el9.src.rpm
+  source:
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/source/SRPMS/Packages/u/unzip-6.0-59.el9.src.rpm
+    repoid: ubi-9-for-ppc64le-baseos-source-rpms
+    size: 1433595
+    checksum: sha256:299d7451195ccb37d8eb90f1870e00eb5ff4c12716c933d4c1657949f0d6aaf8
+    name: unzip
+    evr: 6.0-59.el9
+  module_metadata: []
