@@ -50,11 +50,13 @@ spec:
             "type": "pip",
             "path": ".",
             "requirements_files": [
-              "ppc64le-requirements/requirements.txt"
+              "ppc64le-requirements/2/2.txt",
+              "ppc64le-requirements/2/requirements-devpi-index-2.txt"
             ],
             "requirements_build_files": [
-              "ppc64le-requirements/requirements-sdist-build.txt",
-              "ppc64le-requirements/requirements-rhoai-3.4-index.txt"
+              "ppc64le-requirements/1/1-requirements.txt",
+              "ppc64le-requirements/1/2-rh.txt",
+              "ppc64le-requirements/1/3.txt"
             ],
             "allow_binary": "true"
           },

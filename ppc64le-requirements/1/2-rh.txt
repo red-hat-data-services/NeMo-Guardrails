@@ -1,0 +1,19 @@
+--index-url https://console.redhat.com/api/pypi/public-rhai/rhoai/3.4/cpu-ubi9/simple
+
+annoy==1.17.3
+fastembed==0.6.0
+grpcio==1.80.0
+langchain-openai==0.3.35
+scikit-learn==1.7.2
+scipy==1.16.3
+tiktoken==0.12.0
+confection==0.1.5
+fasttext-predict==0.9.2.4
+Jinja2==3.1.6
+langchain==0.3.27
+langchain-core==0.3.83
+langchain-nvidia-ai-endpoints==0.3.19
+langchain-text-splitters==0.3.11
+pillow==11.3.0
+py_rust_stemmers==0.1.5
+yara-python==4.5.4

@@ -1,0 +1,4 @@
+opentelemetry-exporter-otlp==1.38.0  # requires grpcio==1.80.0
+opentelemetry-exporter-otlp-proto-grpc==1.38.0  # requires grpcio==1.80.0
+sentence-transformers==5.1.2
+presidio_analyzer==2.2.359

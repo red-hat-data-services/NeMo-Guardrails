@@ -1,0 +1,3 @@
+--index-url https://wheels-staging.developerfirst.ibm.com/ppc64le/linux/ --trusted-host wheels-staging.developerfirst.ibm.com
+
+torch==2.9.0

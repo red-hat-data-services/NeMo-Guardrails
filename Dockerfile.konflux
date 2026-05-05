@@ -10,12 +10,14 @@ WORKDIR /app
 ARG TARGETARCH
 ARG GUARDRAILS_PROFILE=opensource
 
-COPY requirements.txt requirements-torch.txt pyproject.toml README.md ./
+COPY requirements.txt requirements-ppc.txt requirements-torch.txt pyproject.toml README.md ./
 COPY nemoguardrails/ ./nemoguardrails/
 COPY scripts/ ./scripts/
 COPY examples/bots/ ./examples/bots/
 
 RUN chmod +x ./scripts/entrypoint.sh
+
+RUN python3 -m pip install --no-cache-dir pyyaml
 
 RUN python3 ./scripts/filter_guardrails.py ./scripts/provider-list.yaml $GUARDRAILS_PROFILE
 
@@ -27,7 +29,7 @@ ENV HF_HOME=/app/.cache/huggingface \
 
 RUN python3 -m venv /app/.venv
 
-RUN /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
+RUN /app/.venv/bin/pip install --no-cache-dir -r requirements-ppc.txt && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
     rm -rf /root/.cache/pip /tmp/* /var/tmp/*
 
