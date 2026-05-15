@@ -1,0 +1,177 @@
+diff --git a/thinc/backends/numpy_ops.pyx b/thinc/backends/numpy_ops.pyx
+index b02a91e..ecb8e88 100644
+--- a/thinc/backends/numpy_ops.pyx
++++ b/thinc/backends/numpy_ops.pyx
+@@ -18,7 +18,7 @@ from preshed.maps cimport PreshMap
+
+ from .. import registry
+ from ..types import ArrayXd, DeviceTypes, DTypes, Shape
+-from ..util import copy_array, get_array_module
++from ..util import copy_array, ensure_native_byteorder, get_array_module
+
+ from .cblas cimport CBlas, daxpy, saxpy
+ from .linalg cimport Vec, VecVec
+@@ -76,7 +76,7 @@ class NumpyOps(Ops):
+         if dtype is not None:
+             array = array.astype(dtype=dtype, copy=False)
+
+-        return array
++        return ensure_native_byteorder(array)
+
+
+     def alloc(self, shape: Shape, *, dtype: Optional[DTypes] = "float32", zeros: bool = True) -> ArrayXd:
+diff --git a/thinc/backends/ops.py b/thinc/backends/ops.py
+index 75d786e..323c60c 100644
+--- a/thinc/backends/ops.py
++++ b/thinc/backends/ops.py
+@@ -47,7 +47,7 @@ from ..types import (
+     Xp,
+     _Floats,
+ )
+-from ..util import get_array_module, is_xp_array, to_numpy
++from ..util import ensure_native_byteorder, get_array_module, is_xp_array, to_numpy
+ from .cblas import CBlas
+
+ ArrayT = TypeVar("ArrayT", bound=ArrayXd)
+@@ -738,18 +738,19 @@ class Ops:
+         """Ensure a given array is of the correct type."""
+         if isinstance(data, self.xp.ndarray):
+             if dtype is None:
+-                return data
++                array = data
+             elif data.dtype == dtype:
+-                return data
++                array = data
+             else:
+-                return self.xp.asarray(data, dtype=dtype)
++                array = self.xp.asarray(data, dtype=dtype)
+         elif hasattr(data, "numpy"):
+             # Handles PyTorch Tensor
+-            return data.numpy()  # type: ignore[union-attr]
++            array = data.numpy()  # type: ignore[union-attr]
+         elif dtype is not None:
+-            return self.xp.array(data, dtype=dtype)
++            array = self.xp.array(data, dtype=dtype)
+         else:
+-            return self.xp.array(data)
++            array = self.xp.array(data)
++        return ensure_native_byteorder(array)
+
+     def as_contig(self, data: ArrayT, dtype: Optional[DTypes] = None) -> ArrayT:
+         """Allow the backend to make a contiguous copy of an array.
+diff --git a/thinc/tests/backends/test_ops.py b/thinc/tests/backends/test_ops.py
+index e36cbac..0d0365a 100644
+--- a/thinc/tests/backends/test_ops.py
++++ b/thinc/tests/backends/test_ops.py
+@@ -1534,7 +1534,9 @@ def test_compare_activations_to_torch(ops, dtype, x, dY, torch_func):
+         )
+         assert dx_thinc_inplace is dY_thinc_inplace
+         assert ops.xp.isclose(dx_thinc, dx_thinc_inplace)
+-        assert ops.xp.isclose(x_torch.grad.item() * dY, float(dx_thinc), atol=1e-06)
++        assert ops.xp.isclose(
++            x_torch.grad.item() * dY, float(dx_thinc.item()), atol=1e-06
++        )
+     elif params == {"Y", "dY"}:
+         dx_thinc = backward(dY_thinc, Y=y_thinc)
+         assert dx_thinc.dtype == x_thinc.dtype
+@@ -1542,7 +1544,9 @@ def test_compare_activations_to_torch(ops, dtype, x, dY, torch_func):
+             dx_thinc,
+             backward(dY=dY_thinc_inplace, Y=y_thinc, inplace=True),
+         )
+-        assert ops.xp.isclose(x_torch.grad.item() * dY, float(dx_thinc), atol=1e-06)
++        assert ops.xp.isclose(
++            x_torch.grad.item() * dY, float(dx_thinc.item()), atol=1e-06
++        )
+     elif params == {"dY", "X"}:
+         dx_thinc = backward(dY_thinc, X=x_thinc)
+         assert dx_thinc.dtype == x_thinc.dtype
+@@ -1550,7 +1554,9 @@ def test_compare_activations_to_torch(ops, dtype, x, dY, torch_func):
+             dx_thinc, backward(dY=dY_thinc_inplace, X=x_thinc, inplace=True)
+         )
+         assert ops.xp.isclose(
+-            x_torch.grad.item() * dY, float(backward(dY_thinc, X=x_thinc)), atol=1e-06
++            x_torch.grad.item() * dY,
++            float(backward(dY_thinc, X=x_thinc).item()),
++            atol=1e-06,
+         )
+     else:
+         raise NotImplementedError(
+@@ -1608,3 +1614,40 @@ def test_asarray_from_list_uint64(ops):
+     # list contains int values both above and below int64.max
+     uint64_list = [16, 11648197037703959513]
+     assert uint64_list == list(ops.asarray(uint64_list, dtype="uint64"))
++
++
++@pytest.mark.parametrize("ops", CPU_OPS)
++@pytest.mark.parametrize("byteorder", ["<", ">"])
++def test_asarray_converts_to_native_byteorder(ops, byteorder):
++    # Arrays serialized on a platform with the opposite endianness (e.g. a
++    # spaCy pipeline trained on x86_64 and loaded on s390x) must be normalised
++    # to native byte order — otherwise Cython typed memoryviews reject them.
++    import sys as _sys
++
++    native = "<" if _sys.byteorder == "little" else ">"
++    expected = numpy.array([1.0, 2.0, 3.0], dtype="float32")
++    foreign = expected.astype(numpy.dtype("float32").newbyteorder(byteorder))
++    out = ops.asarray(foreign)
++    assert out.dtype.byteorder in ("=", native)
++    assert_allclose(out, expected)
++
++
++def test_ensure_native_byteorder_helper():
++    import sys as _sys
++
++    from thinc.util import ensure_native_byteorder
++
++    native = "<" if _sys.byteorder == "little" else ">"
++
++    native_arr = numpy.array([1, 2, 3], dtype="int32")
++    assert ensure_native_byteorder(native_arr) is native_arr
++
++    opposite = ">" if native == "<" else "<"
++    swapped = native_arr.astype(native_arr.dtype.newbyteorder(opposite))
++    out = ensure_native_byteorder(swapped)
++    assert out.dtype.byteorder in ("=", native)
++    assert list(out) == [1, 2, 3]
++
++    # Single-byte dtypes report "|" and must be passed through untouched.
++    byte_arr = numpy.array([1, 2, 3], dtype="int8")
++    assert ensure_native_byteorder(byte_arr) is byte_arr
+diff --git a/thinc/util.py b/thinc/util.py
+index 506850d..a824c95 100644
+--- a/thinc/util.py
++++ b/thinc/util.py
+@@ -4,6 +4,7 @@ import inspect
+ import os
+ import platform
+ import random
++import sys
+ import tempfile
+ import threading
+ from contextvars import ContextVar
+@@ -110,6 +111,25 @@ def fix_random_seed(seed: int = 0) -> None:  # pragma: no cover
+             torch.backends.cudnn.benchmark = False
+
+
++_NATIVE_BYTEORDER = "<" if sys.byteorder == "little" else ">"
++
++
++def ensure_native_byteorder(array):
++    """Return ``array`` with native byte order, byteswapping if necessary.
++
++    Arrays deserialized from models trained on a platform with a different
++    endianness (for example, spaCy pipelines shipped as little-endian data
++    loaded on an s390x big-endian host) carry a non-native ``dtype.byteorder``
++    and are rejected by Cython typed memoryviews. Normalising to native byte
++    order here lets the same serialized weights run on either platform.
++    """
++    # "=" means native, "|" means not applicable (e.g. single-byte dtypes).
++    byteorder = array.dtype.byteorder
++    if byteorder in ("=", "|") or byteorder == _NATIVE_BYTEORDER:
++        return array
++    return array.byteswap().view(array.dtype.newbyteorder("="))
++
++
+ def is_xp_array(obj: Any) -> bool:
+     """Check whether an object is a numpy or cupy array."""
+     return is_numpy_array(obj) or is_cupy_array(obj)
