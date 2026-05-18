@@ -55,7 +55,7 @@ spec:
     value: .
   timeouts:
     pipeline: 4h
-    tasks: 2h
+    tasks: 3h
   pipelineRef:
     resolver: git
     params:
