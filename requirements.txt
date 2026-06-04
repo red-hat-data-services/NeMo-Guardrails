@@ -68,7 +68,7 @@ einops==0.8.1
     # via nemoguardrails (pyproject.toml)
 fastapi==0.122.0
     # via nemoguardrails (pyproject.toml)
-fastembed==0.6.0
+fastembed==0.8.0
     # via nemoguardrails (pyproject.toml)
 filelock==3.19.1
     # via
@@ -197,7 +197,7 @@ nest-asyncio==1.6.0
     # via nemoguardrails (pyproject.toml)
 networkx==3.5
     # via torch
-nltk==3.9.2
+nltk==3.9.3
     # via nemoguardrails (pyproject.toml)
 numpy==2.3.3
     # via
@@ -234,7 +234,7 @@ pandas==2.3.1
     # via nemoguardrails (pyproject.toml)
 phonenumbers==9.0.10
     # via presidio-analyzer
-pillow==11.3.0
+pillow==12.2.0
     # via
     #   fastembed
     #   sentence-transformers
@@ -281,7 +281,7 @@ pygments==2.19.2
     # via rich
 python-dateutil==2.9.0.post0
     # via pandas
-python-dotenv==1.1.1
+python-dotenv==1.2.2
     # via pydantic-settings
 pytz==2025.2
     # via pandas
