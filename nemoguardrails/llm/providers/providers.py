@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2023-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,9 +86,17 @@ _CUSTOM_CHAT_PROVIDERS = {"nim"}
 
 
 def _discover_langchain_partner_chat_providers() -> Set[str]:
-    from langchain.chat_models.base import _SUPPORTED_PROVIDERS
+    import langchain.chat_models.base as _base
 
-    return _SUPPORTED_PROVIDERS | _CUSTOM_CHAT_PROVIDERS
+    # The internal variable listing supported providers was renamed across langchain versions:
+    # _SUPPORTED_PROVIDERS (<=1.2.1, set) -> _SUPPORTED_PROVIDERS (1.2.1, dict) -> _BUILTIN_PROVIDERS (>=1.2.10, dict)
+    _PROVIDERS = getattr(_base, "_BUILTIN_PROVIDERS", None) or getattr(_base, "_SUPPORTED_PROVIDERS", None)
+    if _PROVIDERS is None:
+        return _CUSTOM_CHAT_PROVIDERS
+
+    if isinstance(_PROVIDERS, dict):
+        return set(_PROVIDERS.keys()) | _CUSTOM_CHAT_PROVIDERS
+    return _PROVIDERS | _CUSTOM_CHAT_PROVIDERS
 
 
 def _discover_langchain_community_chat_providers():
