@@ -77,7 +77,7 @@ fast-langdetect==1.0.0
     # via nemoguardrails (pyproject.toml)
 fastapi==0.136.3
     # via nemoguardrails (pyproject.toml)
-fastembed==0.6.0
+fastembed==0.8.0
     # via nemoguardrails (pyproject.toml)
 fasttext-predict==0.9.2.4
     # via fast-langdetect
@@ -109,7 +109,7 @@ h11==0.16.0
     # via
     #   httpcore
     #   uvicorn
-hf-xet==1.1.10
+hf-xet==1.2.0
     # via huggingface-hub
 httpcore==1.0.9
     # via httpx
@@ -120,7 +120,7 @@ httpx==0.28.1
     #   openai
 httpx-sse==0.4.1
     # via langchain-community
-huggingface-hub==0.35.1
+huggingface-hub==1.5.0
     # via
     #   fastembed
     #   sentence-transformers
@@ -374,7 +374,7 @@ pyyaml==6.0.2
     #   langchain-core
     #   presidio-analyzer
     #   transformers
-regex==2025.9.18
+regex==2025.10.22
     # via
     #   nltk
     #   presidio-analyzer
@@ -415,7 +415,7 @@ scipy==1.16.3
     # via
     #   scikit-learn
     #   sentence-transformers
-sentence-transformers==5.1.2
+sentence-transformers==5.5.1
     # via nemoguardrails (pyproject.toml)
 setuptools==80.9.0
     # via
@@ -490,7 +490,7 @@ tqdm==4.67.1
     #   sentence-transformers
     #   spacy
     #   transformers
-transformers==4.57.1
+transformers==5.5.0
     # via sentence-transformers
 typer==0.19.2
     # via

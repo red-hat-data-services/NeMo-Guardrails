@@ -69,7 +69,13 @@ spec:
   taskRunTemplate:
     serviceAccountName: build-pipeline-pull-request-pipelines
   workspaces:
+<<<<<<< HEAD
     - name: git-auth
       secret:
         secretName: "{{ git_auth_secret }}"
+=======
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+>>>>>>> 0534c0cc8 (chore(deps): Bump transformers to 5.5.0)
 status: {}

@@ -50,7 +50,7 @@ aiohttp = ">=3.10.11"
 aiohttp-retry = ">=2.9.0"
 annoy = ">=1.17.3"
 fastapi = ">=0.103.0,"
-fastembed = [{ version = ">=0.2.2", python = ">=3.10,<3.14" }]
+fastembed = [{ version = ">=0.8.0", python = ">=3.10,<3.14" }]
 # onnxruntime 1.24+ dropped Python 3.10 wheels; cap it for that version
 onnxruntime = [
     { version = ">=1.17.0,<1.24", python = ">=3.10,<3.11" },
@@ -123,6 +123,7 @@ torch = { version = ">=2.0.0", optional = true, source = "pytorch-cpu" }
 spacy = { version = ">=3.4.4,<4.0.0,!=3.7.0", python = "<3.14", optional = true }
 nltk = { version = ">=3.8", optional = true }
 sentence-transformers = { version = ">=2.2.0", optional = true }
+transformers = { version = ">=5.5.0", optional = true }
 einops = { version = ">=0.6.0", optional = true }
 
 # multilingual content safety - language detection
@@ -136,7 +137,7 @@ gcp = ["google-cloud-language"]
 tracing = ["opentelemetry-api", "aiofiles"]
 nvidia = ["langchain-nvidia-ai-endpoints"]
 jailbreak = ["yara-python"]
-models = ["torch", "spacy", "nltk", "sentence-transformers", "einops"]
+models = ["torch", "spacy", "nltk", "sentence-transformers", "transformers", "einops"]
 multilingual = ["fast-langdetect"]
 server = ["aiofiles", "openai"]
 otel = ["opentelemetry-distro", "opentelemetry-exporter-otlp", "opentelemetry-instrumentation-fastapi", "opentelemetry-instrumentation-httpx"]
@@ -160,6 +161,7 @@ all = [
   "spacy",
   "nltk",
   "sentence-transformers",
+  "transformers",
   "einops",
   "fast-langdetect",
 ]
