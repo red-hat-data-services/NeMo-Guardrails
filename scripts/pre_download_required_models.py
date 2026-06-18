@@ -89,9 +89,7 @@ def download_sentence_transformers_models(models):
             sentence_transformers.SentenceTransformer(model_name)
             logging.info(f"Downloaded Sentence Transformers model: {model_name}")
         except Exception as e:
-            logging.warning(
-                f"Failed to download Sentence Transformers model {model_name}: {e}"
-            )
+            logging.warning(f"Failed to download Sentence Transformers model {model_name}: {e}")
 
 
 def download_fastembed_models(models):
@@ -143,9 +141,7 @@ def download_huggingface_models(models):
                 except Exception as e2:
                     logging.warning(f"Failed to download {model_name}: {e2}")
             else:
-                logging.warning(
-                    f"Failed to download HuggingFace model {model_name}: {e}"
-                )
+                logging.warning(f"Failed to download HuggingFace model {model_name}: {e}")
 
 
 def download_nltk_data():
