@@ -15,7 +15,7 @@
 import logging
 import uuid
 from time import time
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Union, cast
 from uuid import UUID
 
 from langchain_core.agents import AgentAction, AgentFinish
@@ -145,7 +145,7 @@ class LoggingCallbackHandler(AsyncCallbackHandler):
 
     async def on_llm_new_token(
         self,
-        token: str,
+        token: Union[str, List[Union[str, Dict[str, Any]]]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
