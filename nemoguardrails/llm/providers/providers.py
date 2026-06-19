@@ -86,9 +86,13 @@ _CUSTOM_CHAT_PROVIDERS = {"nim"}
 
 
 def _discover_langchain_partner_chat_providers() -> Set[str]:
-    from langchain.chat_models.base import _SUPPORTED_PROVIDERS
+    try:
+        from langchain.chat_models.base import _BUILTIN_PROVIDERS as _supported
+    except ImportError:
+        from langchain.chat_models.base import _SUPPORTED_PROVIDERS as _supported  # type: ignore[attr-defined]
 
-    return _SUPPORTED_PROVIDERS | _CUSTOM_CHAT_PROVIDERS
+    providers = set(_supported.keys()) if isinstance(_supported, dict) else _supported
+    return providers | _CUSTOM_CHAT_PROVIDERS
 
 
 def _discover_langchain_community_chat_providers():
