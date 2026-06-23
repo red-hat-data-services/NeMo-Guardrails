@@ -43,6 +43,7 @@ spec:
     - linux/x86_64
     - linux-m2xlarge/arm64
     - linux/ppc64le
+    - linux/s390x
   - name: prefetch-input
     value: |
       [{"type": "generic", "path": "."}]
@@ -54,7 +55,7 @@ spec:
     value: .
   timeouts:
     pipeline: 4h
-    tasks: 2h
+    tasks: 3h
   pipelineRef:
     resolver: git
     params:
