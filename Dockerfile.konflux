@@ -23,8 +23,8 @@ ENV HF_HOME=/app/.cache/huggingface \
     FASTEMBED_CACHE_PATH=/app/.cache/fastembed
 
 RUN python3 -m venv /app/.venv && \
-    /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
-    /app/.venv/bin/pip install --no-cache-dir -r requirements-models.txt && \
+    /app/.venv/bin/pip install --no-cache-dir --no-deps -r requirements.txt && \
+    /app/.venv/bin/pip install --no-cache-dir --no-deps -r requirements-models.txt && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
     rm -rf /root/.cache/pip /tmp/* /var/tmp/*
 
