@@ -1,0 +1,13 @@
+--index-url https://packages.redhat.com/api/pypi/public-rhai/rhoai/3.5/cpu-ubi9-test/simple/
+
+# Version 0.23.0.dev0 is unreleased; compile from pyproject.toml directly:
+#   uv pip compile pyproject.toml --extra sdd --extra jailbreak --extra tracing \
+#     --extra models --extra multilingual --extra server --extra otel \
+#     --python-platform linux --python-version 3.12 \
+#     --index-url "https://packages.redhat.com/api/pypi/public-rhai/rhoai/3.5/cpu-ubi9-test/simple/" \
+#     --index-strategy first-index --emit-index-url --emit-index-annotation \
+#     --prerelease=allow --no-strip-markers --no-emit-package nemoguardrails \
+#     --generate-hashes -o requirements.txt
+nemoguardrails[sdd,jailbreak,tracing,models,multilingual,server,otel]==0.23.0.dev0
+poetry-core>=1.0.0,<2.0.0
+# via nemoguardrails (pyproject.toml::build-system.requires)

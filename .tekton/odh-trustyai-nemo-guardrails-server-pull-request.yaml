@@ -2,20 +2,23 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   annotations:
-    build.appstudio.openshift.io/repo: https://github.com/opendatahub-io/NeMo-Guardrails?rev={{revision}}
+    build.appstudio.openshift.io/repo: https://github.com/red-hat-data-services/NeMo-Guardrails?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    pipelinesascode.tekton.dev/cancel-in-progress: "false"
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
-      == "incubation"
+    pipelinesascode.tekton.dev/on-comment: "^/build-konflux"
+    pipelinesascode.tekton.dev/on-label: "[kfbuild-all, kfbuild-NeMo-Guardrails]"
+    pipelinesascode.tekton.dev/on-target-branch: "[{{target_branch}}]"
+    pipelinesascode.tekton.dev/on-event: "[pull_request]"
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: opendatahub-builds
-    appstudio.openshift.io/component: odh-trustyai-nemo-guardrails-serve-ci
+    appstudio.openshift.io/application: automation
+    appstudio.openshift.io/component: pull-request-pipelines-odh-trustyai-nemo-guardrails-server
     pipelines.appstudio.openshift.io/type: build
-  name: odh-trustyai-nemo-guardrails-server-on-pull-request
-  namespace: open-data-hub-tenant
+  name: odh-trustyai-nemo-guardrails-server-on-pull-request-29387
+  namespace: rhoai-tenant
 spec:
   params:
   - name: git-url
@@ -23,31 +26,56 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/opendatahub/odh-trustyai-nemo-guardrails-server:odh-pr
+    value: quay.io/rhoai/pull-request-pipelines:odh-trustyai-nemo-guardrails-server-rhel9-{{revision}}
+  - name: additional-tags
+    value:
+    - 'pr-{{pull_request_number}}-into-{{target_branch}}'
+  - name: additional-labels
+    value:
+    - version=on-pr-{{revision}}
+    - io.openshift.tags=odh-trustyai-nemo-guardrails-server
+  - name: image-expires-after
+    value: 5d
   - name: dockerfile
-    value: Dockerfile.server
-  - name: path-context
-    value: .
+    value: Dockerfile.konflux
   - name: build-platforms
     value:
     - linux/x86_64
     - linux-m2xlarge/arm64
-  - name: additional-tags
-    value:
-    - 'odh-pr-{{revision}}'
-  - name: pipeline-type
-    value: pull-request
+    - linux/ppc64le
+    - linux/s390x
+  - name: prefetch-input
+    value: |
+      [{
+        "type": "pip",
+        "path": ".",
+        "requirements_files": ["requirements.txt", "requirements-models.txt"],
+        "binary": {"arch": "x86_64,aarch64,ppc64le,s390x"}
+      },
+      {
+        "type": "generic",
+        "path": "."
+      }]
+  - name: hermetic
+    value: "true"
+  - name: enable-slack-failure-notification
+    value: "false"
+  - name: path-context
+    value: .
+  timeouts:
+    pipeline: 4h
+    tasks: 2h
   pipelineRef:
     resolver: git
     params:
     - name: url
-      value: https://github.com/opendatahub-io/odh-konflux-central.git
+      value: https://github.com/red-hat-data-services/konflux-central.git
     - name: revision
-      value: main
+      value: '{{ target_branch }}'
     - name: pathInRepo
-      value: pipeline/multi-arch-container-build.yaml
+      value: pipelines/multi-arch-container-build.yaml
   taskRunTemplate:
-    serviceAccountName: build-pipeline-odh-trustyai-nemo-guardrails-serve-ci
+    serviceAccountName: build-pipeline-pull-request-pipelines
   workspaces:
   - name: git-auth
     secret:
