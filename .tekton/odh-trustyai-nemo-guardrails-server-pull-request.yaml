@@ -58,6 +58,8 @@ spec:
       }]
   - name: hermetic
     value: "true"
+  - name: prefetch-mode
+    value: permissive
   - name: enable-slack-failure-notification
     value: "false"
   - name: path-context
