@@ -6,7 +6,7 @@ WORKDIR /app
 
 ARG GUARDRAILS_PROFILE=opensource
 
-COPY requirements.txt requirements-models.txt pyproject.toml README.md ./
+COPY requirements.txt requirements-build.txt requirements-models.txt pyproject.toml README.md ./
 COPY artifacts.lock.yaml ./
 COPY nemoguardrails/ ./nemoguardrails/
 COPY scripts/ ./scripts/
@@ -23,6 +23,7 @@ ENV HF_HOME=/app/.cache/huggingface \
     FASTEMBED_CACHE_PATH=/app/.cache/fastembed
 
 RUN python3 -m venv /app/.venv && \
+    /app/.venv/bin/pip install --no-cache-dir -r requirements-build.txt && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements-models.txt && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
