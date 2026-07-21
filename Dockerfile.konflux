@@ -6,7 +6,7 @@ WORKDIR /app
 
 ARG GUARDRAILS_PROFILE=opensource
 
-COPY requirements.txt requirements-models.txt pyproject.toml README.md LICENSE* LICENSES* ./
+COPY requirements.txt requirements-build.in requirements-models.txt pyproject.toml README.md LICENSE* LICENSES* ./
 COPY artifacts.lock.yaml ./
 
 COPY nemoguardrails/ ./nemoguardrails/
@@ -26,8 +26,10 @@ ENV HF_HOME=/app/.cache/huggingface \
 RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements-models.txt && \
+    mkdir -p nemoguardrails/examples && \
+    cp -r examples/bots nemoguardrails/examples/bots && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
-    rm -rf /root/.cache/pip /tmp/* /var/tmp/*
+    rm -rf nemoguardrails/examples /root/.cache/pip /tmp/* /var/tmp/*
 
 RUN set -ex && \
     GUARDRAILS_PROFILE=$GUARDRAILS_PROFILE ./scripts/setup_prefetched_models.sh && \
