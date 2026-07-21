@@ -6,7 +6,7 @@ WORKDIR /app
 
 ARG GUARDRAILS_PROFILE=opensource
 
-COPY requirements.txt requirements-build.in requirements-models.txt pyproject.toml README.md LICENSE* LICENSES* ./
+COPY requirements.txt requirements-build.in requirements-models.txt pyproject.toml README.md LICENSE* LICENCES* ./
 COPY artifacts.lock.yaml ./
 
 COPY nemoguardrails/ ./nemoguardrails/
