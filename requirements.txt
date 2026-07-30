@@ -158,7 +158,7 @@ langchain==0.3.27
     #   langchain-community
 langchain-community==0.3.29
     # via nemoguardrails (pyproject.toml)
-langchain-core==0.3.83
+langchain-core==0.3.86
     # via
     #   nemoguardrails (pyproject.toml)
     #   langchain
@@ -473,7 +473,7 @@ tokenizers==0.22.1
     # via
     #   fastembed
     #   transformers
-# torch==2.12.0
+torch==2.13.0
     # via
     #   nemoguardrails (pyproject.toml)
     #   sentence-transformers
