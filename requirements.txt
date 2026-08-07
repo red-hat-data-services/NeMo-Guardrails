@@ -232,7 +232,7 @@ packaging==25.0
     #   weasel
 pandas==2.3.1
     # via nemoguardrails (pyproject.toml)
-phonenumbers==9.0.10
+phonenumbers==9.0.22
     # via presidio-analyzer
 pillow==11.3.0
     # via
