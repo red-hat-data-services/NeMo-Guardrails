@@ -1,12 +1,12 @@
 ARG BASE=quay.io/aipcc/base-images/cpu:3.5.0
-FROM $BASE as build
+FROM ${BASE} as build
 
 USER 0
 WORKDIR /app
 
 ARG GUARDRAILS_PROFILE=opensource
 
-COPY requirements.txt requirements-build.in requirements-models.txt pyproject.toml README.md LICENSE* LICENCES* ./
+COPY requirements.txt requirements-build.txt requirements-models.txt pyproject.toml README.md LICENSE* LICENCES* ./
 COPY artifacts.lock.yaml ./
 
 COPY nemoguardrails/ ./nemoguardrails/
@@ -24,6 +24,7 @@ ENV HF_HOME=/app/.cache/huggingface \
     FASTEMBED_CACHE_PATH=/app/.cache/fastembed
 
 RUN python3 -m venv /app/.venv && \
+    /app/.venv/bin/pip install --no-cache-dir -r requirements-build.txt && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements-models.txt && \
     mkdir -p nemoguardrails/examples && \
@@ -38,7 +39,7 @@ RUN set -ex && \
     find /app/.cache -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true && \
     rm -rf /app/.cache/huggingface/xet /root/.cache /tmp/* /var/tmp/*
 
-FROM $BASE as runtime
+FROM ${BASE} as runtime
 
 USER 0
 WORKDIR /app
