@@ -42,24 +42,9 @@ artifacts:
 - download_url: https://huggingface.co/RedHatAI/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json
   filename: hf--sentence-transformers--all-MiniLM-L6-v2--1_Pooling--config.json
   checksum: sha256:4be450dde3b0273bb9787637cfbd28fe04a7ba6ab9d36ac48e92b11e350ffc23
-- download_url: https://huggingface.co/RedHatAI/all-MiniLM-L6-v2/resolve/main/config.json
-  filename: hf--qdrant--all-MiniLM-L6-v2-onnx--config.json
-  checksum: sha256:953f9c0d463486b10a6871cc2fd59f223b2c70184f49815e7efbcab5d8908b41
 - download_url: https://huggingface.co/RedHatAI/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
   filename: hf--qdrant--all-MiniLM-L6-v2-onnx--model.onnx
   checksum: sha256:6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452
-- download_url: https://huggingface.co/RedHatAI/all-MiniLM-L6-v2/resolve/main/special_tokens_map.json
-  filename: hf--qdrant--all-MiniLM-L6-v2-onnx--special_tokens_map.json
-  checksum: sha256:303df45a03609e4ead04bc3dc1536d0ab19b5358db685b6f3da123d05ec200e3
-- download_url: https://huggingface.co/RedHatAI/all-MiniLM-L6-v2/resolve/main/tokenizer.json
-  filename: hf--qdrant--all-MiniLM-L6-v2-onnx--tokenizer.json
-  checksum: sha256:be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037
-- download_url: https://huggingface.co/RedHatAI/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json
-  filename: hf--qdrant--all-MiniLM-L6-v2-onnx--tokenizer_config.json
-  checksum: sha256:acb92769e8195aabd29b7b2137a9e6d6e25c476a4f15aa4355c233426c61576b
-- download_url: https://huggingface.co/RedHatAI/all-MiniLM-L6-v2/resolve/main/vocab.txt
-  filename: hf--qdrant--all-MiniLM-L6-v2-onnx--vocab.txt
-  checksum: sha256:07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3
 - download_url: https://huggingface.co/RedHatAI/nltk-punkt-tab/resolve/main/english/abbrev_types.txt
   filename: punkt_tab--english--abbrev_types.txt
   checksum: sha256:92a3e070f43d9b4c5534758ca40ad7343b04e7e29bfe0c2eb658a39445a4f779

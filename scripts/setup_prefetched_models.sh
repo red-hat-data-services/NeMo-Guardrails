@@ -93,10 +93,24 @@ setup_opensource() {
     fi
 
     # FastEmbed ONNX model -> FASTEMBED_CACHE_PATH
+    # The ONNX model shares most files with the ST model (same RedHatAI source).
+    # Only model.onnx is prefetched under the qdrant prefix; shared files are
+    # copied from the ST prefetch to avoid duplicate download URLs in the lockfile.
     local fe_commit
     fe_commit=$(get_commit_from_lockfile "qdrant/all-MiniLM-L6-v2-onnx" "${lockfile}")
     if [ -n "${fe_commit}" ]; then
         setup_hf_model "qdrant/all-MiniLM-L6-v2-onnx" "${FASTEMBED_CACHE_PATH}" "${fe_commit}" false
+
+        local onnx_snap="${FASTEMBED_CACHE_PATH}/models--qdrant--all-MiniLM-L6-v2-onnx/snapshots/${fe_commit}"
+        local shared_files="config.json special_tokens_map.json tokenizer.json tokenizer_config.json vocab.txt"
+        for fname in ${shared_files}; do
+            if [ ! -f "${onnx_snap}/${fname}" ]; then
+                local st_src="${GENERIC_DIR}/hf--sentence-transformers--all-MiniLM-L6-v2--${fname}"
+                if [ -f "${st_src}" ]; then
+                    cp "${st_src}" "${onnx_snap}/${fname}"
+                fi
+            fi
+        done
     fi
 
     # NLTK punkt_tab data

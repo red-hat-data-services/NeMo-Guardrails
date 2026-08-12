@@ -407,9 +407,21 @@ def main():
         all_artifacts.extend(nltk_artifacts)
         metadata_comments.append(f"# {NLTK_PUNKT_TAB_REPO} commit: {commit}")
 
+    seen_urls: dict[str, str] = {}
+    deduped_artifacts = []
+    for art in all_artifacts:
+        url = art["download_url"]
+        if url in seen_urls:
+            logging.info(
+                f"  Dedup: {art['filename']} shares URL with {seen_urls[url]}, skipping"
+            )
+            continue
+        seen_urls[url] = art["filename"]
+        deduped_artifacts.append(art)
+
     lockfile = {
         "metadata": {"version": "1.0"},
-        "artifacts": all_artifacts,
+        "artifacts": deduped_artifacts,
     }
 
     output_path = Path("artifacts.lock.yaml")
@@ -426,7 +438,7 @@ def main():
         f.write("\n".join(header_lines) + "\n")
         yaml.dump(lockfile, f, default_flow_style=False, sort_keys=False)
 
-    logging.info(f"\nWrote {len(all_artifacts)} artifacts to {output_path}")
+    logging.info(f"\nWrote {len(deduped_artifacts)} artifacts to {output_path}")
 
 
 if __name__ == "__main__":
