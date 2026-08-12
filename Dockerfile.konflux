@@ -26,7 +26,7 @@ ENV HF_HOME=/app/.cache/huggingface \
 RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements-build.txt && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
-    /app/.venv/bin/pip install --no-cache-dir -r requirements-models.txt && \
+    /app/.venv/bin/pip install --no-cache-dir --no-deps -r requirements-models.txt && \
     mkdir -p nemoguardrails/examples && \
     cp -r examples/bots nemoguardrails/examples/bots && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
