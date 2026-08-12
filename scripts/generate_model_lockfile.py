@@ -264,7 +264,7 @@ def build_mirrored_onnx_artifacts(
 
     artifacts = []
     for source_path, cache_name in file_mapping.items():
-        download_url = f"{HUGGINGFACE_RESOLVE}/{source_id}/resolve/main/{source_path}"
+        download_url = f"{HUGGINGFACE_RESOLVE}/{source_id}/resolve/{commit}/{source_path}"
         filename = flat_filename(prefix, cache_org, cache_repo, cache_name)
 
         file_info = all_files.get(source_path)
@@ -408,20 +408,22 @@ def main():
         metadata_comments.append(f"# {NLTK_PUNKT_TAB_REPO} commit: {commit}")
 
     seen_urls: dict[str, str] = {}
-    deduped_artifacts = []
     for art in all_artifacts:
         url = art["download_url"]
         if url in seen_urls:
-            logging.info(
-                f"  Dedup: {art['filename']} shares URL with {seen_urls[url]}, skipping"
+            logging.error(
+                f"Duplicate download_url: {url}\n"
+                f"  first: {seen_urls[url]}\n"
+                f"  second: {art['filename']}\n"
+                f"Hermeto rejects duplicate URLs. Use commit-pinned URLs "
+                f"(/resolve/{{commit}}/) for mirrored models to disambiguate."
             )
-            continue
+            sys.exit(1)
         seen_urls[url] = art["filename"]
-        deduped_artifacts.append(art)
 
     lockfile = {
         "metadata": {"version": "1.0"},
-        "artifacts": deduped_artifacts,
+        "artifacts": all_artifacts,
     }
 
     output_path = Path("artifacts.lock.yaml")
@@ -438,7 +440,7 @@ def main():
         f.write("\n".join(header_lines) + "\n")
         yaml.dump(lockfile, f, default_flow_style=False, sort_keys=False)
 
-    logging.info(f"\nWrote {len(deduped_artifacts)} artifacts to {output_path}")
+    logging.info(f"\nWrote {len(all_artifacts)} artifacts to {output_path}")
 
 
 if __name__ == "__main__":
