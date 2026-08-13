@@ -239,8 +239,8 @@ def test_tool_call_dangerous_blocked():
     assert result["rails_status"]["check tool call safety"]["status"] == "blocked"
 
 
-def test_inline_config_no_models_inherits_from_server():
-    """Inline config with no models inherits from server default config."""
+def test_inline_config_rejected():
+    """Inline config is rejected on the checks endpoint."""
     response = client.post(
         "/v1/guardrail/checks",
         json={
@@ -251,40 +251,8 @@ def test_inline_config_no_models_inherits_from_server():
     )
 
     result = response.json()
-    # May error due to missing prompts, but structure should be valid
-    assert "status" in result
-
-
-def test_inline_config_with_explicit_models():
-    """Inline config with explicit models (will error without valid endpoint)."""
-    response = client.post(
-        "/v1/guardrail/checks",
-        json={
-            "model": "test",
-            "messages": [{"role": "user", "content": "test"}],
-            "guardrails": {
-                "config": {
-                    "models": [
-                        {
-                            "type": "main",
-                            "engine": "openai",
-                            "parameters": {
-                                "openai_api_base": "http://invalid",
-                                "model_name": "test",
-                                "api_key": "test",
-                            },
-                        }
-                    ],
-                    "rails": {"input": {"flows": ["self check input"]}},
-                }
-            },
-        },
-    )
-
-    result = response.json()
-    # Will error due to invalid endpoint, but should have proper structure
     assert result["status"] == "error"
-    assert "guardrails_data" in result
+    assert "Inline guardrails configuration is not supported" in str(result["guardrails_data"])
 
 
 def test_empty_messages_error():
@@ -372,8 +340,8 @@ def test_unsupported_message_role():
     assert "Unsupported message role" in str(result["guardrails_data"])
 
 
-def test_inline_config_invalid_models_field():
-    """Inline config with invalid models field type returns error."""
+def test_inline_config_with_models_rejected():
+    """Inline config with models is also rejected on the checks endpoint."""
     response = client.post(
         "/v1/guardrail/checks",
         json={
@@ -381,7 +349,7 @@ def test_inline_config_invalid_models_field():
             "messages": [{"role": "user", "content": "test"}],
             "guardrails": {
                 "config": {
-                    "models": "not-a-list",  # Invalid - should be list
+                    "models": [{"type": "main", "engine": "openai"}],
                     "rails": {"input": {"flows": ["self check input"]}},
                 }
             },
@@ -390,7 +358,7 @@ def test_inline_config_invalid_models_field():
 
     result = response.json()
     assert result["status"] == "error"
-    assert "models' must be a list" in str(result["guardrails_data"])
+    assert "Inline guardrails configuration is not supported" in str(result["guardrails_data"])
 
 
 def test_response_structure():
