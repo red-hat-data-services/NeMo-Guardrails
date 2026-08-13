@@ -49,19 +49,27 @@ setup_hf_model() {
     echo "Installed HF model ${model_id} into ${cache_base}"
 }
 
-setup_nltk_data() {
-    local resource="$1"  # e.g. punkt
-    local src="${GENERIC_DIR}/nltk--${resource}.zip"
+setup_nltk_punkt_tab() {
+    local dest_dir="${NLTK_DATA}/tokenizers/punkt_tab"
+    local found=false
 
-    if [ ! -f "$src" ]; then
-        echo "Warning: NLTK resource ${resource} not found at ${src}"
-        return
+    for src in "${GENERIC_DIR}/punkt_tab--"*; do
+        [ -f "$src" ] || continue
+        found=true
+        local basename="${src##*/}"
+        local rest="${basename#punkt_tab--}"
+        local lang="${rest%%--*}"
+        local fname="${rest#*--}"
+
+        mkdir -p "${dest_dir}/${lang}"
+        cp "$src" "${dest_dir}/${lang}/${fname}"
+    done
+
+    if [ "${found}" = "true" ]; then
+        echo "Installed NLTK punkt_tab data"
+    else
+        echo "Warning: No punkt_tab files found in ${GENERIC_DIR}"
     fi
-
-    local dest_dir="${NLTK_DATA}/tokenizers"
-    mkdir -p "${dest_dir}"
-    python3 -c "import zipfile; zipfile.ZipFile('${src}').extractall('${dest_dir}/')"
-    echo "Installed NLTK resource ${resource}"
 }
 
 # Read commit hashes from artifacts.lock.yaml header comments.
@@ -91,8 +99,8 @@ setup_opensource() {
         setup_hf_model "qdrant/all-MiniLM-L6-v2-onnx" "${FASTEMBED_CACHE_PATH}" "${fe_commit}" false
     fi
 
-    # NLTK data
-    setup_nltk_data "punkt"
+    # NLTK punkt_tab data
+    setup_nltk_punkt_tab
 }
 
 main() {

@@ -39,23 +39,64 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 HUGGINGFACE_API = "https://huggingface.co/api/models"
 HUGGINGFACE_RESOLVE = "https://huggingface.co"
-NLTK_DATA_BASE = "https://raw.githubusercontent.com/nltk/nltk_data/gh-pages"
+
+# RedHatAI HuggingFace mirrors for supply chain security.
+# Keys are the cache model IDs that libraries expect at runtime;
+# values are the RedHatAI repos to download from instead.
+HF_MODEL_MIRRORS = {
+    "sentence-transformers/all-MiniLM-L6-v2": "RedHatAI/all-MiniLM-L6-v2",
+}
+
+# ONNX model mirrors.  fastembed expects specific cache model IDs (e.g.
+# qdrant/all-MiniLM-L6-v2-onnx) so we download from RedHatAI but keep
+# the original model ID in filenames for cache compatibility.
+ONNX_MIRRORS: dict[str, dict] = {
+    "qdrant/all-MiniLM-L6-v2-onnx": {
+        "source": "RedHatAI/all-MiniLM-L6-v2",
+        "file_mapping": {
+            "config.json": "config.json",
+            "onnx/model.onnx": "model.onnx",
+            "special_tokens_map.json": "special_tokens_map.json",
+            "tokenizer.json": "tokenizer.json",
+            "tokenizer_config.json": "tokenizer_config.json",
+            "vocab.txt": "vocab.txt",
+        },
+    },
+}
+
+# NLTK punkt_tab data from RedHatAI (replaces legacy punkt.zip from GitHub)
+NLTK_PUNKT_TAB_REPO = "RedHatAI/nltk-punkt-tab"
+NLTK_PUNKT_TAB_LANGS = ["english"]
+NLTK_PUNKT_TAB_FILES = [
+    "abbrev_types.txt",
+    "collocations.tab",
+    "ortho_context.tab",
+    "sent_starters.txt",
+]
 
 SKIP_FILES = {
     ".gitattributes",
     "README.md",
     "train_script.py",
+    "inference.py",
+    "requirements.txt",
+    "config.yaml",
+    "burn_scars_config.yaml",
 }
 
 SKIP_EXTENSIONS = {
     ".bin",  # pytorch_model.bin (duplicate of safetensors)
     ".h5",  # tf_model.h5
     ".ot",  # rust_model.ot
+    ".pt",  # checkpoint files (not needed for inference)
+    ".tif",  # geospatial examples
 }
 
 SKIP_PREFIXES = [
     "onnx/",
     "openvino/",
+    "examples/",
+    "splits/",
 ]
 
 
@@ -144,18 +185,20 @@ def collect_hf_files(
 def build_hf_artifacts(
     model_id: str,
     prefix: str,
+    download_model_id: str | None = None,
     skip_files: set[str] | None = None,
     skip_extensions: set[str] | None = None,
     skip_prefixes: list[str] | None = None,
 ) -> tuple[str, list[dict]]:
+    source_id = download_model_id or model_id
     org, repo = model_id.split("/", 1)
-    commit = get_hf_model_commit(model_id)
-    files = collect_hf_files(model_id, skip_files, skip_extensions, skip_prefixes)
+    commit = get_hf_model_commit(source_id)
+    files = collect_hf_files(source_id, skip_files, skip_extensions, skip_prefixes)
 
     artifacts = []
     for f in files:
         path = f["path"]
-        download_url = f"{HUGGINGFACE_RESOLVE}/{model_id}/resolve/main/{path}"
+        download_url = f"{HUGGINGFACE_RESOLVE}/{source_id}/resolve/main/{path}"
         filename = flat_filename(prefix, org, repo, path)
 
         lfs = f.get("lfs")
@@ -178,20 +221,70 @@ def build_hf_artifacts(
     return commit, artifacts
 
 
-def build_nltk_artifacts(resources: set[str]) -> list[dict]:
+def build_nltk_punkt_tab_artifacts(
+    repo: str,
+    langs: list[str],
+    files: list[str],
+) -> tuple[str, list[dict]]:
+    commit = get_hf_model_commit(repo)
     artifacts = []
-    for resource in sorted(resources):
-        url = f"{NLTK_DATA_BASE}/packages/tokenizers/{resource}.zip"
-        logging.info(f"  {resource} (downloading to compute checksum...)")
-        sha = download_and_hash(url)
+    for lang in langs:
+        for fname in files:
+            path = f"{lang}/{fname}"
+            download_url = f"{HUGGINGFACE_RESOLVE}/{repo}/resolve/main/{path}"
+            logging.info(f"  {path} (downloading to compute checksum...)")
+            sha = download_and_hash(download_url)
+            artifacts.append(
+                {
+                    "download_url": download_url,
+                    "filename": f"punkt_tab--{lang}--{fname}",
+                    "checksum": f"sha256:{sha}",
+                }
+            )
+    return commit, artifacts
+
+
+def build_mirrored_onnx_artifacts(
+    cache_model_id: str,
+    mirror_config: dict,
+    prefix: str = "hf",
+) -> tuple[str, list[dict]]:
+    source_id = mirror_config["source"]
+    file_mapping = mirror_config["file_mapping"]
+    cache_org, cache_repo = cache_model_id.split("/", 1)
+    commit = get_hf_model_commit(source_id)
+
+    all_files = {}
+    for entry in list_hf_files(source_id):
+        all_files[entry["path"]] = entry
+        if entry["type"] == "directory":
+            for subentry in list_hf_files(source_id, entry["path"]):
+                if subentry["type"] == "file":
+                    all_files[subentry["path"]] = subentry
+
+    artifacts = []
+    for source_path, cache_name in file_mapping.items():
+        download_url = f"{HUGGINGFACE_RESOLVE}/{source_id}/resolve/{commit}/{source_path}"
+        filename = flat_filename(prefix, cache_org, cache_repo, cache_name)
+
+        file_info = all_files.get(source_path)
+        if file_info and file_info.get("lfs"):
+            checksum = f"sha256:{file_info['lfs']['oid']}"
+            logging.info(f"  {source_path} -> {cache_name} (LFS, checksum from API)")
+        else:
+            logging.info(f"  {source_path} -> {cache_name} (downloading to compute checksum...)")
+            sha = download_and_hash(download_url)
+            checksum = f"sha256:{sha}"
+
         artifacts.append(
             {
-                "download_url": url,
-                "filename": f"nltk--{resource}.zip",
-                "checksum": f"sha256:{sha}",
+                "download_url": download_url,
+                "filename": filename,
+                "checksum": checksum,
             }
         )
-    return artifacts
+
+    return commit, artifacts
 
 
 def get_fastembed_hf_sources(model_names: set[str]) -> dict[str, str]:
@@ -249,10 +342,15 @@ def main():
     for model_id in sorted(st_models):
         if "/" not in model_id:
             continue
-        logging.info(f"Processing {model_id}:")
+        mirror_id = HF_MODEL_MIRRORS.get(model_id)
+        if mirror_id:
+            logging.info(f"Processing {model_id} (from {mirror_id}):")
+        else:
+            logging.info(f"Processing {model_id}:")
         commit, artifacts = build_hf_artifacts(
             model_id,
             prefix="hf",
+            download_model_id=mirror_id,
             skip_files=SKIP_FILES,
             skip_extensions=SKIP_EXTENSIONS,
             skip_prefixes=SKIP_PREFIXES,
@@ -263,12 +361,22 @@ def main():
     logging.info("\n--- FastEmbed ONNX models ---")
     fastembed_mapping = get_fastembed_hf_sources(st_models)
     for original_name, onnx_repo in sorted(fastembed_mapping.items()):
-        logging.info(f"Processing {onnx_repo} (ONNX for {original_name}):")
-        commit, artifacts = build_hf_artifacts(
-            onnx_repo,
-            prefix="hf",
-            skip_files={".gitattributes", "README.md"},
-        )
+        if onnx_repo in ONNX_MIRRORS:
+            mirror = ONNX_MIRRORS[onnx_repo]
+            logging.info(
+                f"Processing {onnx_repo} (ONNX for {original_name}, from {mirror['source']}):"
+            )
+            commit, artifacts = build_mirrored_onnx_artifacts(
+                cache_model_id=onnx_repo,
+                mirror_config=mirror,
+            )
+        else:
+            logging.info(f"Processing {onnx_repo} (ONNX for {original_name}):")
+            commit, artifacts = build_hf_artifacts(
+                onnx_repo,
+                prefix="hf",
+                skip_files={".gitattributes", "README.md"},
+            )
         all_artifacts.extend(artifacts)
         metadata_comments.append(f"# {onnx_repo} commit: {commit}")
 
@@ -290,9 +398,28 @@ def main():
 
     nltk_resources = models.get("nltk", set())
     if nltk_resources:
-        logging.info("\n--- NLTK data ---")
-        nltk_artifacts = build_nltk_artifacts(nltk_resources)
+        logging.info(f"\n--- NLTK data (punkt_tab from {NLTK_PUNKT_TAB_REPO}) ---")
+        commit, nltk_artifacts = build_nltk_punkt_tab_artifacts(
+            repo=NLTK_PUNKT_TAB_REPO,
+            langs=NLTK_PUNKT_TAB_LANGS,
+            files=NLTK_PUNKT_TAB_FILES,
+        )
         all_artifacts.extend(nltk_artifacts)
+        metadata_comments.append(f"# {NLTK_PUNKT_TAB_REPO} commit: {commit}")
+
+    seen_urls: dict[str, str] = {}
+    for art in all_artifacts:
+        url = art["download_url"]
+        if url in seen_urls:
+            logging.error(
+                f"Duplicate download_url: {url}\n"
+                f"  first: {seen_urls[url]}\n"
+                f"  second: {art['filename']}\n"
+                f"Hermeto rejects duplicate URLs. Use commit-pinned URLs "
+                f"(/resolve/{{commit}}/) for mirrored models to disambiguate."
+            )
+            sys.exit(1)
+        seen_urls[url] = art["filename"]
 
     lockfile = {
         "metadata": {"version": "1.0"},
