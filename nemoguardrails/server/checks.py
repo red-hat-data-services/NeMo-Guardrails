@@ -511,27 +511,27 @@ async def guardrail_checks(body: GuardrailsChatCompletionRequest, request: Reque
                 yield _json_response(_create_check_error_response("Messages list cannot be empty."))
                 return
 
+            if body.guardrails.config:
+                yield _json_response(
+                    _create_check_error_response(
+                        "Inline guardrails configuration is not supported. Use config_id to reference a server-side configuration."
+                    )
+                )
+                return
+
             try:
-                if body.guardrails.config:
-                    llm_rails = await _load_rails_for_check(app, config=body.guardrails.config, model_name=body.model)
-                else:
-                    config_ids = _get_config_ids_from_request(body, app)
-                    if not config_ids:
-                        yield _json_response(
-                            _create_check_error_response(
-                                "No guardrails configuration provided and no default configuration set on server."
-                            )
+                config_ids = _get_config_ids_from_request(body, app)
+                if not config_ids:
+                    yield _json_response(
+                        _create_check_error_response(
+                            "No guardrails configuration provided and no default configuration set on server."
                         )
-                        return
-                    llm_rails = await _load_rails_for_check(app, config_ids=config_ids, model_name=body.model)
+                    )
+                    return
+                llm_rails = await _load_rails_for_check(app, config_ids=config_ids, model_name=body.model)
             except Exception as e:
                 log.exception(e)
-                error_msg = (
-                    "Failed to load inline guardrails configuration."
-                    if body.guardrails.config
-                    else "Could not load guardrails configuration."
-                )
-                yield _json_response(_create_check_error_response(error_msg, str(e)))
+                yield _json_response(_create_check_error_response("Could not load guardrails configuration.", str(e)))
                 return
 
             rails_status = {}
