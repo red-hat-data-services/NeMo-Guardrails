@@ -29,7 +29,7 @@ asgiref==3.11.1
     # via opentelemetry-instrumentation-asgi
 attrs==25.3.0
     # via aiohttp
-blis==1.3.0
+blis==1.3.3
     # via thinc
 catalogue==2.0.10
     # via
