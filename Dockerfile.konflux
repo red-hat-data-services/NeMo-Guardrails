@@ -1,4 +1,15 @@
 ARG BASE=quay.io/aipcc/base-images/cpu:3.5.0
+
+ARG MODELCAR_MINILM=registry.stage.redhat.io/rhai/modelcar-redhatai-all-minilm-l6-v2:3.0
+ARG MODELCAR_SNOWFLAKE=registry.stage.redhat.io/rhai/modelcar-redhatai-snowflake-arctic-embed-m-long:3.0
+ARG MODELCAR_SPACY=registry.stage.redhat.io/rhai/modelcar-redhatai-en-core-web-lg:3.0
+ARG MODELCAR_NLTK=registry.stage.redhat.io/rhai/modelcar-redhatai-nltk-punkt-tab:3.0
+
+FROM ${MODELCAR_MINILM} AS modelcar-minilm
+FROM ${MODELCAR_SNOWFLAKE} AS modelcar-snowflake
+FROM ${MODELCAR_SPACY} AS modelcar-spacy
+FROM ${MODELCAR_NLTK} AS modelcar-nltk
+
 FROM ${BASE} as build
 
 USER 0
@@ -6,8 +17,7 @@ WORKDIR /app
 
 ARG GUARDRAILS_PROFILE=opensource
 
-COPY requirements.txt requirements-build.txt requirements-models.txt pyproject.toml README.md LICENSE* LICENCES* ./
-COPY artifacts.lock.yaml ./
+COPY requirements.txt requirements-build.txt pyproject.toml README.md LICENSE* LICENCES* ./
 
 COPY nemoguardrails/ ./nemoguardrails/
 COPY scripts/ ./scripts/
@@ -23,17 +33,22 @@ ENV HF_HOME=/app/.cache/huggingface \
     NLTK_DATA=/app/.cache/nltk_data \
     FASTEMBED_CACHE_PATH=/app/.cache/fastembed
 
+COPY --from=modelcar-minilm /models /tmp/modelcars/minilm
+COPY --from=modelcar-snowflake /models /tmp/modelcars/snowflake
+COPY --from=modelcar-spacy /models/en_core_web_lg-any-py3-none-any.whl /tmp/modelcars/
+COPY --from=modelcar-nltk /models /tmp/modelcars/nltk
+
 RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements-build.txt && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
-    /app/.venv/bin/pip install --no-cache-dir --no-deps -r requirements-models.txt && \
+    /app/.venv/bin/pip install --no-cache-dir --no-deps /tmp/modelcars/en_core_web_lg-any-py3-none-any.whl && \
     mkdir -p nemoguardrails/examples && \
     cp -r examples/bots nemoguardrails/examples/bots && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
-    rm -rf nemoguardrails/examples /root/.cache/pip /tmp/* /var/tmp/*
+    rm -rf nemoguardrails/examples /root/.cache/pip /var/tmp/*
 
 RUN set -ex && \
-    GUARDRAILS_PROFILE=$GUARDRAILS_PROFILE ./scripts/setup_prefetched_models.sh && \
+    python3 ./scripts/setup_modelcar_models.py && \
     find /app/.cache -type f -name "*.pyc" -delete && \
     find /app/.cache -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
     find /app/.cache -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true && \

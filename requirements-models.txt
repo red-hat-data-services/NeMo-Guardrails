@@ -1,2 +1,0 @@
-en-core-web-lg @ https://huggingface.co/RedHatAI/en_core_web_lg/resolve/main/en_core_web_lg-any-py3-none-any.whl \
-    --hash=sha256:ab70aeb6172cde82508f7739f35ebc9918a3d07debeed637403c8f794ba3d3dc
