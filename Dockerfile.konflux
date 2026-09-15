@@ -21,6 +21,7 @@ COPY requirements.txt requirements-build.txt pyproject.toml README.md LICENSE* L
 
 COPY nemoguardrails/ ./nemoguardrails/
 COPY scripts/ ./scripts/
+COPY scripts/tldcache/ /app/.cache/tldcache/
 COPY examples/bots/ ./examples/bots/
 
 RUN chmod +x ./scripts/entrypoint.sh
@@ -73,6 +74,7 @@ ENV HF_HOME=/app/.cache/huggingface \
     SENTENCE_TRANSFORMERS_HOME=/app/.cache/sentence_transformers \
     NLTK_DATA=/app/.cache/nltk_data \
     FASTEMBED_CACHE_PATH=/app/.cache/fastembed \
+    TLDEXTRACT_CACHE=/app/.cache/tldcache/ \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     DO_NOT_TRACK=1 \
