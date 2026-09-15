@@ -73,7 +73,7 @@ def test_model_based_classifier_imports(monkeypatch):
 
 # Test 3: Error if dependencies missing when instantiating model-based classifier
 
-
+@pytest.mark.skip(reason="Transformers issue in RHOAI 3.3")
 def test_model_based_classifier_missing_deps(monkeypatch):
     """
     If sklearn is missing, instantiating JailbreakClassifier should raise ImportError.
