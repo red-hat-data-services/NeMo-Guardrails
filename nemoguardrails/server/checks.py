@@ -23,11 +23,15 @@ import asyncio
 import copy
 import json
 import logging
+import warnings
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, List, Optional, Union
+from typing import Any, AsyncIterator, List, Optional, Union
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, FastAPI, Request
+from starlette.datastructures import MutableHeaders
 from starlette.responses import StreamingResponse
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from nemoguardrails import LLMRails, RailsConfig, utils
 from nemoguardrails.header_forwarding import api_request_headers_var
@@ -51,7 +55,46 @@ from nemoguardrails.server.schemas.openai import GuardrailsChatCompletionRequest
 
 log = logging.getLogger(__name__)
 
-router = APIRouter()
+_DEPRECATION_NOTICE = (
+    "/v1/guardrail/checks is being deprecated; please migrate to /v1/checks. "
+    "The request and response formats differ; review its API schema before migrating."
+)
+
+
+@asynccontextmanager
+async def _checks_lifespan(app: FastAPI) -> AsyncIterator[None]:
+    log.warning(_DEPRECATION_NOTICE)
+    yield
+
+
+router = APIRouter(lifespan=_checks_lifespan)
+
+
+class LegacyChecksDeprecationMiddleware:
+    """Advertise migration on legacy responses without buffering their bodies."""
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope["path"].removeprefix(scope.get("root_path", ""))
+        if path not in ("/v1/guardrail/checks", "/v1/guardrail/checks/"):
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_deprecation(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers["Deprecation"] = "true"
+                headers["Sunset"] = "Mon, 01 Feb 2027 00:00:00 GMT"
+                headers.append("Link", '</v1/checks>; rel="successor-version"')
+            await send(message)
+
+        await self.app(scope, receive, send_with_deprecation)
 
 
 # =============================================================================
@@ -479,9 +522,17 @@ def _build_check_messages(role: str, content: str, msg: dict) -> List[dict]:
 @router.post(
     "/v1/guardrail/checks",
     response_model=DetailedGuardrailCheckResponse,
+    deprecated=True,
 )
 async def guardrail_checks(body: GuardrailsChatCompletionRequest, request: Request):
     """Check messages against guardrails without generating LLM responses.
+
+    Deprecated: migrate to `/v1/checks`. The request and response formats differ;
+    review its API schema before migrating.
+
+    Responses include `Deprecation: true`, `Sunset: Mon, 01 Feb 2027 00:00:00 GMT`, and
+    `Link: </v1/checks>; rel="successor-version"`, including streaming and error
+    responses. The server also logs a deprecation warning at startup.
 
     This endpoint validates messages against configured guardrails using role-based routing:
     - user messages: evaluated by input rails
@@ -489,6 +540,11 @@ async def guardrail_checks(body: GuardrailsChatCompletionRequest, request: Reque
     - assistant messages: evaluated by output rails
     - tool messages: evaluated by tool_input rails
     """
+    warnings.warn(
+        _DEPRECATION_NOTICE,
+        DeprecationWarning,
+        stacklevel=2,
+    )
     log.info("Got guardrail check request for config %s", body.guardrails.config_id)
     for logger in registered_loggers:
         asyncio.get_event_loop().create_task(

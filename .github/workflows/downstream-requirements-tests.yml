@@ -1,0 +1,115 @@
+name: Downstream Requirements Tests
+
+on:
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+
+permissions:
+  contents: read
+
+jobs:
+  downstream-requirements-test:
+    name: UBI 9 / Python 3.12 / requirements.txt
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: registry.access.redhat.com/ubi9/python-312@sha256:608649675c344ac80d58842b883515f39a2232398386805bc6a741f823340a4e
+      options: --user 0
+    defaults:
+      run:
+        shell: bash
+    env:
+      # Use this checkout's environment and indexes, not the image's uv defaults.
+      UV_CONFIG_FILE: /dev/null
+      UV_NO_CACHE: "false"
+      LD_LIBRARY_PATH: /opt/openmpi/lib
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install system dependencies
+        run: |
+          dnf install -y make gcc gcc-c++ curl-minimal tar gzip ca-certificates \
+            openblas-threads openblas-openmp numactl-libs
+          dnf clean all
+
+      - name: Build OpenMPI runtime
+        # Public UBI repositories and OpenMPI's wheel lack libmpi_cxx.so.40.
+        # PyTorch's Red Hat wheel requires the C++ bindings from OpenMPI 4.x.
+        run: |
+          build_dir=$(mktemp -d)
+          cd "$build_dir"
+          curl --fail --location --retry 5 --connect-timeout 30 --max-time 300 \
+            https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.8.tar.gz \
+            --output openmpi-4.1.8.tar.gz
+          echo 'fb41086bbed9300baa2f3d7572491facfe5257412fa524ec5a396aa9101d5c62  openmpi-4.1.8.tar.gz' | sha256sum --check
+          tar -xzf openmpi-4.1.8.tar.gz
+          cd openmpi-4.1.8
+          ./configure --prefix=/opt/openmpi --libdir=/opt/openmpi/lib \
+            --enable-mpi-cxx --disable-mpi-fortran --disable-oshmem --disable-static
+          make -j"$(nproc)"
+          make install
+
+      - name: Install uv
+        uses: ./.github/actions/setup-uv
+        with:
+          cache-suffix: downstream-requirements-ubi9-3.12
+
+      - name: Create virtual environment
+        run: env -u VIRTUAL_ENV uv venv --python /usr/bin/python3.12 --no-python-downloads .venv
+
+      - name: Install downstream runtime dependencies
+        env:
+          # Allow transient Red Hat registry failures more time to recover.
+          UV_HTTP_RETRIES: "8"
+        run: |
+          uv pip install --python .venv/bin/python -r requirements.txt
+          uv pip freeze --python .venv/bin/python > "$RUNNER_TEMP/downstream-runtime-constraints.txt"
+
+      - name: Export locked test dependencies
+        run: |
+          # Keep packages already supplied by the downstream runtime out of the export.
+          runtime_exclusions=()
+          while IFS='=' read -r package _; do
+            runtime_exclusions+=(--no-emit-package "$package")
+          done < "$RUNNER_TEMP/downstream-runtime-constraints.txt"
+          env -u UV_CONFIG_FILE uv export --locked --only-group test --only-group test_integration \
+            --no-emit-project "${runtime_exclusions[@]}" \
+            --output-file "$RUNNER_TEMP/downstream-test-requirements.txt" > /dev/null
+
+      - name: Install locked test dependencies and package
+        run: |
+          # The export includes transitive dependencies; do not resolve new ones.
+          uv pip install --python .venv/bin/python --no-deps --no-sources \
+            --requirement "$RUNNER_TEMP/downstream-test-requirements.txt" \
+            --constraint "$RUNNER_TEMP/downstream-runtime-constraints.txt"
+          uv pip install --python .venv/bin/python --no-deps -e .
+          uv pip check --python .venv/bin/python
+
+      - name: Check native libraries and certificate bundle
+        run: |
+          env -u VIRTUAL_ENV uv run --locked --no-sync python - <<'PY'
+          from importlib.util import find_spec
+          from pathlib import Path
+          import ssl
+          import subprocess
+
+          # Show PyTorch's transitive library dependencies before importing it.
+          torch_dir = Path(find_spec("torch").origin).parent
+          subprocess.run(["ldd", str(torch_dir / "lib/libtorch_cpu.so")], check=True)
+
+          import certifi
+          import numpy
+          import scipy
+          import torch
+
+          ssl.create_default_context(cafile=certifi.where())
+          print(f"NumPy {numpy.__version__}, SciPy {scipy.__version__}, PyTorch {torch.__version__}")
+          print(f"Certificate bundle: {certifi.where()}")
+          PY
+
+      - name: Run pytest
+        # Syncing from uv.lock would replace the downstream runtime dependencies.
+        run: env -u VIRTUAL_ENV make test PYTEST="uv run --locked --no-sync pytest"

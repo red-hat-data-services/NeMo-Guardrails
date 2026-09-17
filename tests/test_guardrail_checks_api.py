@@ -26,13 +26,15 @@ Tests cover the most common real-world usage patterns:
 """
 
 import json
+import logging
 import os
 from unittest.mock import patch
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from nemoguardrails.server import api
+from nemoguardrails.server import api, checks
 from tests.utils import FakeLLMModel
 
 client = TestClient(api.app)
@@ -59,6 +61,101 @@ def setup_test_config():
     ):
         yield
     api.llm_rails_instances.clear()
+
+
+def _assert_deprecation_headers(response):
+    assert response.headers["deprecation"] == "true"
+    assert response.headers["sunset"] == "Mon, 01 Feb 2027 00:00:00 GMT"
+    assert response.headers["link"] == '</v1/checks>; rel="successor-version"'
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_deprecation_headers_on_success(stream):
+    response = client.post(
+        "/v1/guardrail/checks",
+        json={
+            "model": "test",
+            "messages": [{"role": "user", "content": "Hello"}],
+            "guardrails": {"config_id": "simple_rails"},
+            "stream": stream,
+        },
+    )
+
+    assert response.status_code == 200
+    _assert_deprecation_headers(response)
+    if stream:
+        assert response.headers["content-type"] == "application/x-ndjson"
+        assert json.loads(response.text.splitlines()[-1])["status"] == "success"
+    else:
+        assert response.json()["status"] == "success"
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_deprecation_headers_on_check_error(stream):
+    response = client.post(
+        "/v1/guardrail/checks",
+        json={"model": "test", "messages": [], "stream": stream},
+    )
+
+    assert response.status_code == 200
+    assert "Messages list cannot be empty" in response.text
+    _assert_deprecation_headers(response)
+
+
+@pytest.mark.parametrize(
+    "method, path, body, status",
+    [
+        ("POST", "/v1/guardrail/checks", {}, 422),
+        ("GET", "/v1/guardrail/checks", None, 405),
+        ("POST", "/v1/guardrail/checks/", {}, 307),
+    ],
+)
+def test_deprecation_headers_on_framework_responses(method, path, body, status):
+    response = client.request(method, path, json=body, follow_redirects=False)
+
+    assert response.status_code == status
+    _assert_deprecation_headers(response)
+
+
+def test_deprecation_headers_on_unhandled_error():
+    with patch.object(checks.log, "info", side_effect=RuntimeError("unexpected failure")):
+        response = client.post(
+            "/v1/guardrail/checks",
+            json={"model": "test", "messages": []},
+        )
+
+    assert response.status_code == 500
+    _assert_deprecation_headers(response)
+
+
+def test_successor_has_no_deprecation_headers():
+    response = client.post("/v1/checks", json={})
+
+    assert response.status_code == 422
+    for header in ("deprecation", "sunset", "link"):
+        assert header not in response.headers
+
+
+def test_deprecation_warning_at_startup(caplog):
+    with caplog.at_level(logging.WARNING, logger=checks.__name__):
+        with TestClient(api.app):
+            notices = [record for record in caplog.records if record.name == checks.__name__]
+            assert len(notices) == 1
+            assert "/v1/guardrail/checks is being deprecated" in notices[0].getMessage()
+            assert "/v1/checks" in notices[0].getMessage()
+
+
+def test_deprecation_headers_on_cors_preflight():
+    cors_app = FastAPI()
+    api._add_cors_middleware(cors_app, ["https://example.com"])
+    cors_app.add_middleware(checks.LegacyChecksDeprecationMiddleware)
+    response = TestClient(cors_app).options(
+        "/v1/guardrail/checks",
+        headers={"Origin": "https://example.com", "Access-Control-Request-Method": "POST"},
+    )
+
+    assert response.status_code == 200
+    _assert_deprecation_headers(response)
 
 
 def test_user_message_passes():

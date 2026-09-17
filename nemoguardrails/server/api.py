@@ -247,7 +247,7 @@ def _add_cors_middleware(application: FastAPI, origins: List[str]) -> None:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=["Retry-After"],
+        expose_headers=["Retry-After", "Deprecation", "Sunset", "Link"],
     )
 
 
@@ -819,9 +819,11 @@ async def guardrail_check(body: GuardrailCheckRequest, request: Request):
 
 
 # Include fork-specific checks endpoint router
+from nemoguardrails.server.checks import LegacyChecksDeprecationMiddleware  # noqa: E402
 from nemoguardrails.server.checks import router as checks_router  # noqa: E402
 
 app.include_router(checks_router)
+app.add_middleware(LegacyChecksDeprecationMiddleware)
 
 
 # By default, there are no challenges
