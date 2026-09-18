@@ -4,11 +4,15 @@ ARG MODELCAR_MINILM=registry.redhat.io/rhai/modelcar-redhatai-all-minilm-l6-v2:3
 ARG MODELCAR_SNOWFLAKE=registry.redhat.io/rhai/modelcar-redhatai-snowflake-arctic-embed-m-long:3.0
 ARG MODELCAR_SPACY=registry.redhat.io/rhai/modelcar-redhatai-en-core-web-lg:3.0
 ARG MODELCAR_NLTK=registry.redhat.io/rhai/modelcar-redhatai-nltk-punkt-tab:3.0
+ARG MODELCAR_DEBERTA=registry.redhat.io/rhai/modelcar-redhatai-deberta-v3-base-prompt-injection-v2:3.0
+ARG MODELCAR_HAP=registry.redhat.io/rhai/modelcar-redhatai-granite-guardian-hap-125m:3.0
 
 FROM ${MODELCAR_MINILM} AS modelcar-minilm
 FROM ${MODELCAR_SNOWFLAKE} AS modelcar-snowflake
 FROM ${MODELCAR_SPACY} AS modelcar-spacy
 FROM ${MODELCAR_NLTK} AS modelcar-nltk
+FROM ${MODELCAR_DEBERTA} AS modelcar-deberta
+FROM ${MODELCAR_HAP} AS modelcar-hap
 
 FROM ${BASE} as build
 
@@ -37,6 +41,8 @@ COPY --from=modelcar-minilm /models /tmp/modelcars/minilm
 COPY --from=modelcar-snowflake /models /tmp/modelcars/snowflake
 COPY --from=modelcar-spacy /models/en_core_web_lg-any-py3-none-any.whl /tmp/modelcars/
 COPY --from=modelcar-nltk /models /tmp/modelcars/nltk
+COPY --from=modelcar-deberta /models /tmp/modelcars/deberta
+COPY --from=modelcar-hap /models /tmp/modelcars/hap
 
 RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements-build.txt && \
@@ -50,8 +56,8 @@ RUN python3 -m venv /app/.venv && \
 RUN set -ex && \
     python3 ./scripts/setup_modelcar_models.py && \
     find /app/.cache -type f -name "*.pyc" -delete && \
-    find /app/.cache -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
-    find /app/.cache -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true && \
+    (find /app/.cache -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true) && \
+    (find /app/.cache -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true) && \
     rm -rf /app/.cache/huggingface/xet /root/.cache /tmp/* /var/tmp/*
 
 FROM ${BASE} as runtime
@@ -74,11 +80,11 @@ ENV HF_HOME=/app/.cache/huggingface \
     NLTK_DATA=/app/.cache/nltk_data \
     FASTEMBED_CACHE_PATH=/app/.cache/fastembed \
     PATH="/app/.venv/bin:$PATH" \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1 \
     PYTHONUNBUFFERED=1 \
     DO_NOT_TRACK=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
-    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+    PYTHONDONTWRITEBYTECODE=1
 
 EXPOSE 8000
 ENTRYPOINT ["./scripts/entrypoint.sh"]

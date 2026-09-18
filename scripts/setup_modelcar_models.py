@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Populate HuggingFace-convention cache directories from modelcar-sourced files.
 
 Each modelcar's /models/ tree is staged at MODELCAR_DIR/{name}/ by
@@ -8,7 +23,7 @@ refs/main -> snapshot directory mapping that HF libraries expect.
 Adding a new model:
   1. Add a COPY --from=modelcar-xxx line in the Dockerfile
   2. Add an install_hf_model call in main() below
-  3. If the modelcar bundles extra formats, add a prune_modelcar call
+  3. Only prune files after verifying they are not required by that model
 """
 
 import os
@@ -64,9 +79,7 @@ def prune_modelcar(src: Path) -> None:
     print(f"Pruned {src}: {before}MB -> {after}MB")
 
 
-def install_hf_model(
-    src_dir: Path, model_id: str, cache_base: str, *, use_hub: bool = False
-) -> None:
+def install_hf_model(src_dir: Path, model_id: str, cache_base: str, *, use_hub: bool = False) -> None:
     if not src_dir.is_dir():
         sys.exit(f"FATAL: source {src_dir} not found")
 
@@ -120,6 +133,19 @@ def main() -> None:
     install_hf_model(
         MODELCAR_DIR / "snowflake",
         "RedHatAI/snowflake-arctic-embed-m-long",
+        os.environ["HF_HOME"],
+        use_hub=True,
+    )
+
+    install_hf_model(
+        MODELCAR_DIR / "deberta",
+        "RedHatAI/deberta-v3-base-prompt-injection-v2",
+        os.environ["HF_HOME"],
+        use_hub=True,
+    )
+    install_hf_model(
+        MODELCAR_DIR / "hap",
+        "RedHatAI/granite-guardian-hap-125m",
         os.environ["HF_HOME"],
         use_hub=True,
     )
