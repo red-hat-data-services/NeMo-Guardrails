@@ -25,6 +25,7 @@ COPY requirements.txt requirements-build.txt pyproject.toml README.md LICENSE* L
 
 COPY nemoguardrails/ ./nemoguardrails/
 COPY scripts/ ./scripts/
+COPY scripts/tldcache/ /app/.cache/tldcache/
 COPY examples/bots/ ./examples/bots/
 
 RUN chmod +x ./scripts/entrypoint.sh
@@ -82,6 +83,7 @@ ENV HF_HOME=/app/.cache/huggingface \
     PATH="/app/.venv/bin:$PATH" \
     HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1 \
+    TLDEXTRACT_CACHE=/app/.cache/tldcache/ \
     PYTHONUNBUFFERED=1 \
     DO_NOT_TRACK=1 \
     PYTHONDONTWRITEBYTECODE=1
