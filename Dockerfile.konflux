@@ -1,4 +1,4 @@
-ARG BASE=quay.io/aipcc/base-images/cpu:3.5.0
+ARG BASE=quay.io/aipcc/base-images/cpu:3.5.2
 FROM $BASE as build
 
 USER 0
