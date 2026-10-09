@@ -2600,7 +2600,7 @@ requires-dist = [
     { name = "aiofiles", marker = "extra == 'all'", specifier = ">=24.1.0" },
     { name = "aiofiles", marker = "extra == 'server'", specifier = ">=24.1.0" },
     { name = "aiofiles", marker = "extra == 'tracing'", specifier = ">=24.1.0" },
-    { name = "aiohttp", specifier = ">=3.10.11" },
+    { name = "aiohttp", specifier = ">=3.14.3" },
     { name = "aiohttp-retry", specifier = ">=2.9.0" },
     { name = "chainlit", marker = "extra == 'all'", specifier = ">=2.11.0,<3.0.0" },
     { name = "chainlit", marker = "extra == 'chat-ui'", specifier = ">=2.11.0,<3.0.0" },
