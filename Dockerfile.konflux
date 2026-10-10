@@ -45,6 +45,12 @@ COPY --from=modelcar-nltk /models /tmp/modelcars/nltk
 COPY --from=modelcar-deberta /models /tmp/modelcars/deberta
 COPY --from=modelcar-hap /models /tmp/modelcars/hap
 
+# uv is build tooling inherited from the base image, not a runtime dependency.
+# Remove its bundled crypto and the uvx companion (RHOAIENG-97373).
+RUN /opt/app-root/bin/python -m pip uninstall -y uv && \
+    test ! -e /opt/app-root/bin/uv && \
+    test ! -e /opt/app-root/bin/uvx
+
 RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements-build.txt && \
     /app/.venv/bin/pip install --no-cache-dir -r requirements.txt && \
@@ -67,6 +73,12 @@ USER 0
 WORKDIR /app
 
 COPY --from=build /app /app
+
+# uv is build tooling inherited from the base image, not a runtime dependency.
+# Remove its bundled crypto and the uvx companion (RHOAIENG-97373).
+RUN /opt/app-root/bin/python -m pip uninstall -y uv && \
+    test ! -e /opt/app-root/bin/uv && \
+    test ! -e /opt/app-root/bin/uvx
 
 RUN rm -f /etc/security/namespace.conf /usr/lib64/security/pam_namespace.so || true && \
     chgrp -R 0 /app && \
