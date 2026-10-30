@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/python-312:latest@sha256:105e70cb265e82beef1687b87b77444a05b410c55d8631e9aa9aa6804fcca45d  as build
+FROM registry.access.redhat.com/ubi9/python-312:latest@sha256:5b0c67feb3f2e5637c6301ea22e2839d402dd71d88c3cec8d1fd278ce0f9e69a  as build
 
 USER 0
 WORKDIR /app
@@ -38,7 +38,7 @@ RUN set -ex && \
     find /app/.cache -type d -name ".git" -exec rm -rf {} + 2>/dev/null || true && \
     rm -rf /app/.cache/huggingface/xet /root/.cache /tmp/* /var/tmp/*
 
-FROM registry.access.redhat.com/ubi9/python-312:latest@sha256:105e70cb265e82beef1687b87b77444a05b410c55d8631e9aa9aa6804fcca45d  as runtime
+FROM registry.access.redhat.com/ubi9/python-312:latest@sha256:5b0c67feb3f2e5637c6301ea22e2839d402dd71d88c3cec8d1fd278ce0f9e69a  as runtime
 
 USER 0
 WORKDIR /app
