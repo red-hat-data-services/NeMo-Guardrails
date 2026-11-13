@@ -11,6 +11,7 @@ metadata:
     pipelinesascode.tekton.dev/on-comment: "^/build-konflux (odh-trustyai-nemo-guardrails-server|all)$"
     pipelinesascode.tekton.dev/on-cel-expression: |-
       event == "pull_request"
+      && konflux_cluster == "stone-prod-p02"
       && (files.all.exists(p, ! p.matches('^\\.tekton/')) || ".tekton/odh-trustyai-nemo-guardrails-server-pull-request.yaml".pathChanged())
   creationTimestamp:
   labels:
