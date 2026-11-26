@@ -38,6 +38,10 @@ RUN python3 -m venv /app/.venv && \
     /app/.venv/bin/pip install --no-cache-dir --no-deps . && \
     rm -rf nemoguardrails/examples /root/.cache/pip /tmp/* /var/tmp/*
 
+RUN grpc_roots="$(find /app/.venv/lib/python*/site-packages/grpc/_cython/_credentials -name roots.pem -print -quit)" && \
+    test -n "$grpc_roots" && \
+    install -m 0644 /etc/pki/tls/certs/ca-bundle.crt "$grpc_roots"
+
 RUN set -ex && \
     GUARDRAILS_PROFILE=$GUARDRAILS_PROFILE ./scripts/setup_prefetched_models.sh && \
     find /app/.cache -type f -name "*.pyc" -delete && \
@@ -75,7 +79,8 @@ ENV HF_HOME=/app/.cache/huggingface \
     DO_NOT_TRACK=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
-    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+    SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+    GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/pki/tls/certs/ca-bundle.crt
 
 EXPOSE 8000
 ENTRYPOINT ["./scripts/entrypoint.sh"]
